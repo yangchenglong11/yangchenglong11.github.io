@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+	<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-us" lang="en-us">
 <head>
   <link href="http://gmpg.org/xfn/11" rel="profile">
@@ -9,7 +9,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
 
   
-  <title>My New Hugo Site</title>
+  <title>context &middot; My New Hugo Site</title>
   
 
   
@@ -23,12 +23,11 @@
   <link rel="shortcut icon" href="/favicon.png">
 
   
-  <link href="http://yangchenglong11.github.io/index.xml" rel="alternate" type="application/rss+xml" title="My New Hugo Site" />
+  <link href="" rel="alternate" type="application/rss+xml" title="My New Hugo Site" />
 </head>
 
-<body class=" ">
-
-<div class="sidebar">
+	<body class=" ">
+		<div class="sidebar">
   <div class="container sidebar-sticky">
     <div class="sidebar-about">
       <a href="http://yangchenglong11.github.io/"><h1>My New Hugo Site</h1></a>
@@ -47,20 +46,11 @@
 </div>
 
 
-    <div class="content container">
-<div class="posts">
-
-      
-  <div class="post">
-    <h1 class="post-title">
-      <a href="http://yangchenglong11.github.io/post/context/">
-        context
-      </a>
-    </h1>
-
-    <span class="post-date">Sun, May 14, 2017</span>
-
-    <p>#context</p>
+		<div class="content container">
+			<div class="post">
+			 	<h1>context</h1>
+			  <span class="post-date">Sun, May 14, 2017</span>
+			      <p>#context</p>
 
 <!--*more*-->
 
@@ -564,122 +554,10 @@ func (c *valueCtx) Value(key interface{}) interface{} {
 }
 </code></pre>
 
-  </div>
-  
-  <div class="post">
-    <h1 class="post-title">
-      <a href="http://yangchenglong11.github.io/post/go%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F/">
-        go环境变量
-      </a>
-    </h1>
+			</div>
 
-    <span class="post-date">Sun, May 14, 2017</span>
-
-    <p>#Go 环境变量</p>
-
-<p>Go 开发环境依赖于一些操作系统环境变量，你最好在安装 Go 之间就已经设置好他们。</p>
-
-<!--*more*-->
-
-<p>如果你使用的是 Windows 的话，你完全不用进行手动设置，Go 将被默认安装在目录 c:/go 下。这里列举几个最为重要的环境变量：</p>
-
-<ul>
-<li>$GOROOT 表示 Go 在你的电脑上的安装位置，它的值一般都是 $HOME/go，当然，你也可以安装在别的地方。</li>
-<li>$GOARCH 表示目标机器的处理器架构，它的值可以是 386、amd64 或 arm。</li>
-<li>$GOOS 表示目标机器的操作系统，它的值可以是 darwin、freebsd、linux 或 windows。</li>
-<li>$GOBIN 表示编译器和链接器的安装位置，默认是 $GOROOT/bin，如果你使用的是 Go 1.0.3 及以后的版本，一般情况下你可以将它的值设置为空，Go 将会使用前面提到的默认值。</li>
-</ul>
-
-<p>目标机器是指你打算运行你的 Go 应用程序的机器。</p>
-
-<p>Go 编译器支持交叉编译，也就是说你可以在一台机器上构建运行在具有不同操作系统和处理器架构上运行的应用程序，也就是说编写源代码的机器可以和目标机器有完全不同的特性（操作系统与处理器架构）。</p>
-
-<p>为了区分本地机器和目标机器，你可以使用 $GOHOSTOS 和 $GOHOSTARCH 设置目标机器的参数，这两个变量只有在进行交叉编译的时候才会用到，如果你不进行显示设置，他们的值会和本地机器（$GOOS 和 $GOARCH）一样。</p>
-
-<ul>
-<li>$GOPATH 默认采用和 $GOROOT 一样的值，但从 Go 1.1 版本开始，你必须修改为其它路径。它可以包含多个包含 Go 语言源码文件、包文件和可执行文件的路径，而这些路径下又必须分别包含三个规定的目录：src、pkg 和 bin，这三个目录分别用于存放源码文件、包文件和可执行文件。</li>
-<li>$GOARM 专门针对基于 arm 架构的处理器，它的值可以是 5 或 6，默认为 6。</li>
-<li>$GOMAXPROCS 用于设置应用程序可使用的处理器个数与核数</li>
-</ul>
-
-<p>在接下来的章节中，我们将会讨论如何在 Linux、Mac OS X 和 Windows 上安装 Go 语言。在 FreeBSD 上的安装和 Linux 非常类似。开发团队正在尝试将 Go 语言移植到其它例如 OpenBSD、DragonFlyBSD、NetBSD、Plan 9、Haiku 和 Solaris 操作系统上，你可以在这个页面找到最近的动态：Go Porting Efforts。</p>
-
-  </div>
-  
-  <div class="post">
-    <h1 class="post-title">
-      <a href="http://yangchenglong11.github.io/post/docker%E5%9F%BA%E7%A1%80%E5%91%BD%E4%BB%A4/">
-        Docker基本命令
-      </a>
-    </h1>
-
-    <span class="post-date">Sun, Oct 25, 2015</span>
-
-    
-
-<h1 id="docker基本命令">Docker基本命令</h1>
-
-<p>docker</p>
-
-<p>创建mongo容器，并在其他端口启动</p>
-
-<pre><code> docker run --name clmongo -p 6667:27017 -d mongo
-</code></pre>
-
-<p>创建mongo容器，将数据放在 /home/docker/clmongo_data目录下，在本机27017端口启动，在外部通过6667访问</p>
-
-<pre><code> docker run --name clmongo -v /home/docker/clmongo_data:/data/db -d -p 6667:27017 mongo
-</code></pre>
-
-<p>获取镜像，通过制定tag可以下载特定标签的镜像。比如</p>
-
-<pre><code> docker pull image_name:tag
-</code></pre>
-
-<p>未指定tag时，将会默认下载标签为latest标签的镜像</p>
-
-<pre><code> sudo docker pull ubuntu:14.04
-</code></pre>
-
-<p>使用镜像</p>
-
-<pre><code>  sudo docker run -t -i ubuntu /bin
-</code></pre>
-
-<p>查看镜像信息</p>
-
-<pre><code> docker imges
-</code></pre>
-
-<p>使用docker tag为本地镜像添加新的标签, 添加后可以发现多了一个所添加标签的镜像，但它们标签一致，即标签在这里起到了引用或快捷方式的作用。</p>
-
-<pre><code> sudo docker tag name:tag new_name:new_tag
-</code></pre>
-
-<p>显示 Docker 系统信息，包括镜像和容器数。</p>
-
-<pre><code> docker info
-</code></pre>
-
-<p>使用docker inspect查看该镜像的详细信息</p>
-
-<pre><code> sudo docker inspect image_id
-</code></pre>
-
-<p>查询镜像</p>
-
-<pre><code> sudo docker search name
-</code></pre>
-
-<p>删除镜像</p>
-
-<pre><code> sudo docker mi
-</code></pre>
-
-  </div>
-  
-</div>
-</div>
+			
+		</div>
 
   </body>
 </html>
