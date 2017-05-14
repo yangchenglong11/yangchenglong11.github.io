@@ -2,17 +2,17 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
-    <loc>http://yangchenglong11.github.io/post/dotscale-2014-as-a-sketch/</loc>
+    <loc>http://yangchenglong11.github.io/post/go%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F/</loc>
     <lastmod>2017-05-14T13:48:24+08:00</lastmod>
   </url>
   
   <url>
-    <loc>http://yangchenglong11.github.io/post/dotscale-2014-as-a-sketch/</loc>
+    <loc>http://yangchenglong11.github.io/post/context/</loc>
     <lastmod>2017-05-13T13:58:41+08:00</lastmod>
   </url>
   
   <url>
-    <loc>http://yangchenglong11.github.io/post/dotscale-2014-as-a-sketch/</loc>
+    <loc>http://yangchenglong11.github.io/post/docker%E5%9F%BA%E7%A1%80%E5%91%BD%E4%BB%A4/</loc>
     <lastmod>2017-05-12T13:48:24+08:00</lastmod>
   </url>
   
@@ -22,13 +22,7 @@
   </url>
   
   <url>
-    <loc>http://yangchenglong11.github.io/tags/dotscale/</loc>
-    <lastmod>2017-05-14T13:48:24+08:00</lastmod>
-    <priority>0</priority>
-  </url>
-  
-  <url>
-    <loc>http://yangchenglong11.github.io/tags/event/</loc>
+    <loc>http://yangchenglong11.github.io/tags/go/</loc>
     <lastmod>2017-05-14T13:48:24+08:00</lastmod>
     <priority>0</priority>
   </url>
@@ -41,12 +35,6 @@
   
   <url>
     <loc>http://yangchenglong11.github.io/post/</loc>
-    <lastmod>2017-05-14T13:48:24+08:00</lastmod>
-    <priority>0</priority>
-  </url>
-  
-  <url>
-    <loc>http://yangchenglong11.github.io/tags/sketchnote/</loc>
     <lastmod>2017-05-14T13:48:24+08:00</lastmod>
     <priority>0</priority>
   </url>
