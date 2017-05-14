@@ -50,66 +50,49 @@
 			<div class="post">
 			 	<h1>Docker基本命令</h1>
 			  <span class="post-date">Sun, Oct 25, 2015</span>
-			      
+			      <p>docker
+创建mongo容器，并在其他端口启动</p>
 
-<h1 id="docker基本命令">Docker基本命令</h1>
-
-<p>docker</p>
-
-<p>创建mongo容器，并在其他端口启动</p>
-
-<pre><code> docker run --name clmongo -p 6667:27017 -d mongo
-</code></pre>
+<p><code>docker run --name clmongo -p 6667:27017 -d mongo</code></p>
 
 <p>创建mongo容器，将数据放在 /home/docker/clmongo_data目录下，在本机27017端口启动，在外部通过6667访问</p>
 
-<pre><code> docker run --name clmongo -v /home/docker/clmongo_data:/data/db -d -p 6667:27017 mongo
-</code></pre>
+<p><code>docker run --name clmongo -v /home/docker/clmongo_data:/data/db -d -p 6667:27017 mongo</code></p>
 
-<p>获取镜像，通过制定tag可以下载特定标签的镜像。比如</p>
-
-<pre><code> docker pull image_name:tag
-</code></pre>
+<p>获取镜像，通过制定tag可以下载特定标签的镜像。比如
+<code>docker pull image_name:tag</code></p>
 
 <p>未指定tag时，将会默认下载标签为latest标签的镜像</p>
 
-<pre><code> sudo docker pull ubuntu:14.04
-</code></pre>
+<p><code>sudo docker pull ubuntu:14.04</code></p>
 
 <p>使用镜像</p>
 
-<pre><code>  sudo docker run -t -i ubuntu /bin
-</code></pre>
+<p><code>sudo docker run -t -i ubuntu /bin</code></p>
 
 <p>查看镜像信息</p>
 
-<pre><code> docker imges
-</code></pre>
+<p><code>docker imges</code></p>
 
 <p>使用docker tag为本地镜像添加新的标签, 添加后可以发现多了一个所添加标签的镜像，但它们标签一致，即标签在这里起到了引用或快捷方式的作用。</p>
 
-<pre><code> sudo docker tag name:tag new_name:new_tag
-</code></pre>
+<p><code>sudo docker tag name:tag new_name:new_tag</code></p>
 
 <p>显示 Docker 系统信息，包括镜像和容器数。</p>
 
-<pre><code> docker info
-</code></pre>
+<p><code>docker info</code></p>
 
 <p>使用docker inspect查看该镜像的详细信息</p>
 
-<pre><code> sudo docker inspect image_id
-</code></pre>
+<p><code>sudo docker inspect image_id</code></p>
 
 <p>查询镜像</p>
 
-<pre><code> sudo docker search name
-</code></pre>
+<p><code>sudo docker search name</code></p>
 
 <p>删除镜像</p>
 
-<pre><code> sudo docker mi
-</code></pre>
+<p><code>sudo docker mi</code></p>
 
 			</div>
 
