@@ -6,26 +6,17 @@
     <description>Recent content in Posts on My New Hugo Site</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 14 May 2017 13:58:41 +0800</lastBuildDate>
+    <lastBuildDate>Sun, 14 May 2017 13:48:24 +0800</lastBuildDate>
     
 	<atom:link href="http://yangchenglong11.github.io/post/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
-      <title>context</title>
-      <link>http://yangchenglong11.github.io/post/context/</link>
-      <pubDate>Sun, 14 May 2017 13:58:41 +0800</pubDate>
-      
-      <guid>http://yangchenglong11.github.io/post/context/</guid>
-      <description>// Package context defines the Context type, which carries deadlines, // cancelation signals, and other request-scoped values across API boundaries // and between processes. // // Incoming requests to a server should create a Context, and outgoing // calls to servers should accept a Context. The chain of function // calls between them must propagate the Context, optionally replacing // it with a derived Context created using WithCancel, WithDeadline, // WithTimeout, or WithValue.</description>
-    </item>
-    
-    <item>
       <title>go环境变量</title>
-      <link>http://yangchenglong11.github.io/post/go%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F/</link>
+      <link>http://yangchenglong11.github.io/post/dotscale-2014-as-a-sketch/</link>
       <pubDate>Sun, 14 May 2017 13:48:24 +0800</pubDate>
       
-      <guid>http://yangchenglong11.github.io/post/go%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F/</guid>
+      <guid>http://yangchenglong11.github.io/post/dotscale-2014-as-a-sketch/</guid>
       <description>Go 开发环境依赖于一些操作系统环境变量，你最好在安装 Go 之间就已经设置好他们。
  如果你使用的是 Windows 的话，你完全不用进行手动设置，Go 将被默认安装在目录 c:/go 下。这里列举几个最为重要的环境变量：
  $GOROOT 表示 Go 在你的电脑上的安装位置，它的值一般都是 $HOME/go，当然，你也可以安装在别的地方。 $GOARCH 表示目标机器的处理器架构，它的值可以是 386、amd64 或 arm。 $GOOS 表示目标机器的操作系统，它的值可以是 darwin、freebsd、linux 或 windows。 $GOBIN 表示编译器和链接器的安装位置，默认是 $GOROOT/bin，如果你使用的是 Go 1.0.3 及以后的版本，一般情况下你可以将它的值设置为空，Go 将会使用前面提到的默认值。  目标机器是指你打算运行你的 Go 应用程序的机器。
@@ -35,11 +26,20 @@ Go 编译器支持交叉编译，也就是说你可以在一台机器上构建�
     </item>
     
     <item>
-      <title>Docker基本命令</title>
-      <link>http://yangchenglong11.github.io/post/docker%E5%9F%BA%E7%A1%80%E5%91%BD%E4%BB%A4/</link>
-      <pubDate>Sun, 25 Oct 2015 08:36:54 -0700</pubDate>
+      <title>context</title>
+      <link>http://yangchenglong11.github.io/post/dotscale-2014-as-a-sketch/</link>
+      <pubDate>Sat, 13 May 2017 13:58:41 +0800</pubDate>
       
-      <guid>http://yangchenglong11.github.io/post/docker%E5%9F%BA%E7%A1%80%E5%91%BD%E4%BB%A4/</guid>
+      <guid>http://yangchenglong11.github.io/post/dotscale-2014-as-a-sketch/</guid>
+      <description>// Package context defines the Context type, which carries deadlines, // cancelation signals, and other request-scoped values across API boundaries // and between processes. // // Incoming requests to a server should create a Context, and outgoing // calls to servers should accept a Context. The chain of function // calls between them must propagate the Context, optionally replacing // it with a derived Context created using WithCancel, WithDeadline, // WithTimeout, or WithValue.</description>
+    </item>
+    
+    <item>
+      <title>Docker基本命令</title>
+      <link>http://yangchenglong11.github.io/post/dotscale-2014-as-a-sketch/</link>
+      <pubDate>Fri, 12 May 2017 13:48:24 +0800</pubDate>
+      
+      <guid>http://yangchenglong11.github.io/post/dotscale-2014-as-a-sketch/</guid>
       <description>docker 创建mongo容器，并在其他端口启动
 docker run --name clmongo -p 6667:27017 -d mongo
 创建mongo容器，将数据放在 /home/docker/clmongo_data目录下，在本机27017端口启动，在外部通过6667访问
