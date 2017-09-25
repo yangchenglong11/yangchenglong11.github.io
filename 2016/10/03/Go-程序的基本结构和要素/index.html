@@ -82,32 +82,26 @@
 <h3 id="Go-环境变量"><a href="#Go-环境变量" class="headerlink" title="Go 环境变量"></a>Go 环境变量</h3><p>Go 开发环境依赖于一些操作系统环境变量，你最好在安装 Go 之间就已经设置好他们。</p>
 <p>如果你使用的是 Windows 的话，你完全不用进行手动设置，Go 将被默认安装在目录 c:/go 下。这里列举几个最为重要的环境变量：</p>
 <ul>
-<li>$GOROOT 表示 Go 在你的电脑上的安装位置，它的值一般都是 $HOME/go，当然，你也可以安装在别的地方。</li>
-<li>$GOARCH 表示目标机器的处理器架构，它的值可以是 386、amd64 或 arm。</li>
-<li>$GOOS 表示目标机器的操作系统，它的值可以是 darwin、freebsd、linux 或 windows。</li>
-<li>$GOBIN 表示编译器和链接器的安装位置，默认是 $GOROOT/bin，如果你使用的是 Go 1.0.3 及以后的版本，一般情况下你可以将它的值设置为空，Go 将会使用前面提到的默认值。</li>
+<li><code>$GOROOT</code> 表示 Go 在你的电脑上的安装位置，它的值一般都是 <code>$HOME/go</code>，当然，你也可以安装在别的地方。</li>
+<li><code>$GOARCH</code> 表示目标机器的处理器架构，它的值可以是 386、amd64 或 arm。</li>
+<li><code>$GOOS</code> 表示目标机器的操作系统，它的值可以是 darwin、freebsd、linux 或 windows。</li>
+<li><code>$GOBIN</code> 表示编译器和链接器的安装位置，默认是 <code>$GOROOT/bin</code>，如果你使用的是 Go 1.0.3 及以后的版本，一般情况下你可以将它的值设置为空，Go 将会使用前面提到的默认值。</li>
 </ul>
 <p>目标机器是指你打算运行你的 Go 应用程序的机器。</p>
 <p>Go 编译器支持交叉编译，也就是说你可以在一台机器上构建运行在具有不同操作系统和处理器架构上运行的应用程序，也就是说编写源代码的机器可以和目标机器有完全不同的特性（操作系统与处理器架构）。</p>
-<p>为了区分本地机器和目标机器，你可以使用 $GOHOSTOS 和 $GOHOSTARCH 设置目标机器的参数，这两个变量只有在进行交叉编译的时候才会用到，如果你不进行显示设置，他们的值会和本地机器（$GOOS 和 $GOARCH）一样。</p>
+<p>为了区分本地机器和目标机器，你可以使用 <code>$GOHOSTOS</code> 和 <code>$GOHOSTARCH</code> 设置目标机器的参数，这两个变量只有在进行交叉编译的时候才会用到，如果你不进行显示设置，他们的值会和本地机器（<code>$GOOS</code> 和 <code>$GOARCH</code>）一样。</p>
 <ul>
-<li>$GOPATH 默认采用和 $GOROOT 一样的值，但从 Go 1.1 版本开始，你必须修改为其它路径。它可以包含多个包含 Go 语言源码文件、包文件和可执行文件的路径，而这些路径下又必须分别包含三个规定的目录：src、pkg 和 bin，这三个目录分别用于存放源码文件、包文件和可执行文件。</li>
-<li>$GOARM 专门针对基于 arm 架构的处理器，它的值可以是 5 或 6，默认为 6。</li>
-<li>$GOMAXPROCS 用于设置应用程序可使用的处理器个数与核数</li>
+<li><code>$GOPATH</code> 默认采用和 <code>$GOROOT</code> 一样的值，但从 Go 1.1 版本开始，你必须修改为其它路径。它可以包含多个包含 Go 语言源码文件、包文件和可执行文件的路径，而这些路径下又必须分别包含三个规定的目录：src、pkg 和 bin，这三个目录分别用于存放源码文件、包文件和可执行文件。</li>
+<li><code>$GOARM</code> 专门针对基于 arm 架构的处理器，它的值可以是 5 或 6，默认为 6。</li>
+<li><code>$GOMAXPROCS</code> 用于设置应用程序可使用的处理器个数与核数</li>
 </ul>
 <h3 id="包的概念、导入与可见性"><a href="#包的概念、导入与可见性" class="headerlink" title="包的概念、导入与可见性"></a>包的概念、导入与可见性</h3><p>包是结构化代码的一种方式：每个程序都由包（通常简称为 pkg）的概念组成，可以使用自身的包或者从其它包中导入内容。</p>
-<pre><code>package main
-
-import &quot;fmt&quot;
-
-func main() {
-    fmt.Println(&quot;hello, world&quot;)
-}
-</code></pre><p>如同其它一些编程语言中的类库或命名空间的概念，每个 Go 文件都属于且仅属于一个包。一个包可以由许多以 .go 为扩展名的源文件组成，因此文件名和包名一般来说都是不相同的。</p>
-<p>你必须在源文件中非注释的第一行指明这个文件属于哪个包，如：package main。package main表示一个可独立执行的程序，每个 Go 应用程序都包含一个名为 main 的包。</p>
-<p>一个应用程序可以包含不同的包，而且即使你只使用 main 包也不必把所有的代码都写在一个巨大的文件里：你可以用一些较小的文件，并且在每个文件非注释的第一行都使用 package main 来指明这些文件都属于 main 包。如果你打算编译包名不是为 main 的源文件，如 pack1，编译后产生的对象文件将会是 pack1.a 而不是可执行程序。另外要注意的是，所有的包名都应该使用小写字母。</p>
-<h3 id="标准库"><a href="#标准库" class="headerlink" title="标准库"></a>标准库</h3><p>在 Go 的安装文件里包含了一些可以直接使用的包，即标准库。在 Windows 下，标准库的位置在 Go 根目录下的子目录 pkg\windows_386 中；在 Linux 下，标准库在 Go 根目录下的子目录 pkg\linux_amd64 中（如果是安装的是 32 位，则在 linux<em>386 目录中）。一般情况下，标准包会存放在 $GOROOT/pkg/$GOOS</em>$GOARCH/ 目录下。</p>
-<p>Go 的标准库包含了大量的包（如：fmt 和 os），但是你也可以创建自己的包（第 8 章）。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">package</span> main</div><div class="line">    </div><div class="line"><span class="keyword">import</span> <span class="string">"fmt"</span></div><div class="line">    </div><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</div><div class="line">   fmt.Println(<span class="string">"hello, world"</span>)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>如同其它一些编程语言中的类库或命名空间的概念，每个 Go 文件都属于且仅属于一个包。一个包可以由许多以 .go 为扩展名的源文件组成，因此文件名和包名一般来说都是不相同的。</p>
+<p>你必须在源文件中非注释的第一行指明这个文件属于哪个包，如：<code>package main</code>。<code>package main</code> 表示一个可独立执行的程序，每个 Go 应用程序都包含一个名为 main 的包。</p>
+<p>一个应用程序可以包含不同的包，而且即使你只使用 main 包也不必把所有的代码都写在一个巨大的文件里：你可以用一些较小的文件，并且在每个文件非注释的第一行都使用 <code>package main</code> 来指明这些文件都属于 main 包。如果你打算编译包名不是为 main 的源文件，如 pack1，编译后产生的对象文件将会是 pack1.a 而不是可执行程序。另外要注意的是，所有的包名都应该使用小写字母。</p>
+<h3 id="标准库"><a href="#标准库" class="headerlink" title="标准库"></a>标准库</h3><p>在 Go 的安装文件里包含了一些可以直接使用的包，即标准库。在 Windows 下，标准库的位置在 Go 根目录下的子目录 <code>pkg\windows_386</code> 中；在 Linux 下，标准库在 Go 根目录下的子目录 <code>pkg\linux_amd64</code> 中（如果是安装的是 32 位，则在 linux<em>386 目录中）。一般情况下，标准包会存放在 `$GOROOT/pkg/$GOOS</em>$GOARCH/` 目录下。</p>
+<p>Go 的标准库包含了大量的包（如：fmt 和 os），但是你也可以创建自己的包。</p>
 <p>如果想要构建一个程序，则包和包内的文件都必须以正确的顺序进行编译。包的依赖关系决定了其构建顺序。</p>
 <p>属于同一个包的源文件必须全部被一起编译，一个包即是编译时的一个单元，因此根据惯例，每个目录都只包含一个包。</p>
 <p>如果对一个包进行更改或重新编译，所有引用了这个包的客户端程序都必须全部重新编译。</p>
@@ -120,7 +114,7 @@ func main() {
 <p>这种机制对于编译大型的项目时可以显著地提升编译速度。</p>
 <p><strong>每一段代码只会被编译一次</strong></p>
 <p>一个 Go 程序是通过 import 关键字将一组包链接在一起。</p>
-<p>import “fmt” 告诉 Go 编译器这个程序需要使用 fmt 包（的函数，或其他元素），fmt 包实现了格式化 IO（输入/输出）的函数。包名被封闭在半角双引号 “” 中。如果你打算从已编译的包中导入并加载公开声明的方法，不需要插入已编译包的源代码。</p>
+<p><code>import &quot;fmt&quot;</code> 告诉 Go 编译器这个程序需要使用 fmt 包（的函数，或其他元素），fmt 包实现了格式化 IO（输入/输出）的函数。包名被封闭在半角双引号 “” 中。如果你打算从已编译的包中导入并加载公开声明的方法，不需要插入已编译包的源代码。</p>
 <p>如果需要多个包，它们可以被分别导入：</p>
 <pre><code>import &quot;fmt&quot;
 import &quot;os&quot;
@@ -142,30 +136,24 @@ import &quot;os&quot;
 <p>（大写字母可以使用任何 Unicode 编码的字符，比如希腊文，不仅仅是 ASCII 码中的大写字母）。</p>
 <p>因此，在导入一个外部包后，能够且只能够访问该包中导出的对象。</p>
 <p>假设在包 pack1 中我们有一个变量或函数叫做 Thing（以 T 开头，所以它能够被导出），那么在当前包中导入 pack1 包，Thing 就可以像面向对象语言那样使用点标记来调用：pack1.Thing（pack1 在这里是不可以省略的）。</p>
-<p>因此包也可以作为命名空间使用，帮助避免命名冲突（名称冲突）：两个包中的同名变量的区别在于他们的包名，例如 pack1.Thing 和 pack2.Thing。</p>
-<p>你可以通过使用包的别名来解决包名之间的名称冲突，或者说根据你的个人喜好对包名进行重新设置，如：import fm “fmt”。下面的代码展示了如何使用包的别名：</p>
-<pre><code>package main
-
-import fm &quot;fmt&quot; // alias3
-
-func main() {
-   fm.Println(&quot;hello, world&quot;)
-}
-</code></pre><p>注意事项 </p>
-<p>如果你导入了一个包却没有使用它，则会在构建程序时引发错误，如 imported and not used: os，这正是遵循了 Go 的格言：“没有不必要的代码！“。</p>
+<p>因此包也可以作为命名空间使用，帮助避免命名冲突（名称冲突）：两个包中的同名变量的区别在于他们的包名，例如 <code>pack1.Thing</code> 和 <code>pack2.Thing</code>。</p>
+<p>你可以通过使用包的别名来解决包名之间的名称冲突，或者说根据你的个人喜好对包名进行重新设置，如：<code>import fm &quot;fmt&quot;</code>。下面的代码展示了如何使用包的别名：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">package</span> main</div><div class="line">    </div><div class="line"><span class="keyword">import</span> fm <span class="string">"fmt"</span> <span class="comment">// alias3</span></div><div class="line"></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</div><div class="line">    fm.Println(<span class="string">"hello, world"</span>)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>注意事项 </p>
+<p>如果你导入了一个包却没有使用它，则会在构建程序时引发错误，如 <code>imported and not used: os</code>，这正是遵循了 Go 的格言：“没有不必要的代码！“。</p>
 <p>包的分级声明和初始化</p>
 <p>你可以在使用 import 导入包之后定义或声明 0 个或多个常量（const）、变量（var）和类型（type），这些对象的作用域都是全局的（在本包范围内），所以可以被本包中所有的函数调用（如 gotemplate.go 源文件中的 c 和 v），然后声明一个或多个函数（func）。</p>
 <h3 id="函数"><a href="#函数" class="headerlink" title="函数"></a>函数</h3><p>这是定义一个函数最简单的格式：</p>
 <pre><code>func functionName()
 </code></pre><p>你可以在括号 () 中写入 0 个或多个函数的参数（使用逗号 , 分隔），每个参数的名称后面必须紧跟着该参数的类型。</p>
-<p>main 函数是每一个可执行程序所必须包含的，一般来说都是在启动后第一个执行的函数（如果有 init() 函数则会先执行该函数）。如果你的 main 包的源代码没有包含 main 函数，则会引发构建错误 undefined: main.main。main 函数既没有参数，也没有返回类型（与 C 家族中的其它语言恰好相反）。如果你不小心为 main 函数添加了参数或者返回类型，将会引发构建错误： </p>
+<p>main 函数是每一个可执行程序所必须包含的，一般来说都是在启动后第一个执行的函数（如果有 init() 函数则会先执行该函数）。如果你的 main 包的源代码没有包含 main 函数，则会引发构建错误 <code>undefined: main.main</code>。main 函数既没有参数，也没有返回类型（与 C 家族中的其它语言恰好相反）。如果你不小心为 main 函数添加了参数或者返回类型，将会引发构建错误： </p>
 <pre><code>func main must have no arguments and no return values results.
-</code></pre><p>在程序开始执行并完成初始化后，第一个调用（程序的入口点）的函数是 main.main()（如：C 语言），该函数一旦返回就表示程序已成功执行并立即退出。</p>
+</code></pre><p>在程序开始执行并完成初始化后，第一个调用（程序的入口点）的函数是 <code>main.main()</code>（如：C 语言），该函数一旦返回就表示程序已成功执行并立即退出。</p>
 <p>函数里的代码（函数体）使用大括号 {} 括起来。</p>
 <p>左大括号 { 必须与方法的声明放在同一行，这是编译器的强制规定，否则你在使用 gofmt 时就会出现错误提示：</p>
 <pre><code>`build-error: syntax error: unexpected semicolon or newline before {`
 </code></pre><p>（这是因为编译器会产生 func main() ; 这样的结果，很明显这错误的）</p>
-<p>Go 语言虽然看起来不使用分号作为语句的结束，但实际上这一过程是由编译器自动完成，因此才会引发像上面这样的错误</p>
+<p>Go 语言虽然看起来不使用分号作为语句的结束，但实际上这一过程是由编译器自动完成，因此才会引发像上面这样的错误 。</p>
 <p>右大括号 } 需要被放在紧接着函数体的下一行。如果你的函数非常简短，你也可以将它们放在同一行：</p>
 <pre><code>func Sum(a, b int) int { return a + b }
 </code></pre><p>对于大括号 {} 的使用规则在任何时候都是相同的（如：if 语句等）。</p>
@@ -175,18 +163,18 @@ func main() {
 }
 </code></pre><p>其中：</p>
 <ul>
-<li>parameter_list 的形式为 (param1 type1, param2 type2, …)</li>
-<li>return_value_list 的形式为 (ret1 type1, ret2 type2, …)</li>
+<li><code>parameter_list</code> 的形式为 <code>(param1 type1, param2 type2, …)</code></li>
+<li><code>return_value_list</code> 的形式为 <code>(ret1 type1, ret2 type2, …)</code></li>
 </ul>
 <p>只有当某个函数需要被外部包调用的时候才使用大写字母开头，并遵循 Pascal 命名法；否则就遵循骆驼命名法，即第一个单词的首字母小写，其余单词的首字母大写。</p>
 <p>下面这一行调用了 fmt 包中的 Println 函数，可以将字符串输出到控制台，并在最后自动增加换行字符 \n：</p>
 <pre><code>fmt.Println（&quot;hello, world&quot;）
-</code></pre><p>使用 fmt.Print(“hello, world\n”) 可以得到相同的结果。</p>
-<p>Print 和 Println 这两个函数也支持使用变量，如：fmt.Println(arr)。如果没有特别指定，它们会以默认的打印格式将变量 arr 输出到控制台。</p>
-<p>单纯地打印一个字符串或变量甚至可以使用预定义的方法来实现，如：print、println：print(“ABC”)、println(“ABC”)、println(i)（带一个变量 i）。</p>
+</code></pre><p>使用 <code>fmt.Print(&quot;hello, world\n&quot;)</code> 可以得到相同的结果。</p>
+<p>Print 和 Println 这两个函数也支持使用变量，如：<code>fmt.Println(arr)</code>。如果没有特别指定，它们会以默认的打印格式将变量 arr 输出到控制台。</p>
+<p>单纯地打印一个字符串或变量甚至可以使用预定义的方法来实现，如：<code>print、println 、 print(&quot;ABC&quot;)、println(&quot;ABC&quot;)、println(i)（带一个变量 i）</code>。</p>
 <p>这些函数只可以用于调试阶段，在部署程序的时候务必将它们替换成 fmt 中的相关函数。</p>
 <p>当被调用函数的代码执行到结束符 } 或返回语句时就会返回，然后程序继续执行调用该函数之后的代码。</p>
-<p>程序正常退出的代码为 0 即 Program exited with code 0；如果程序因为异常而被终止，则会返回非零值，如：1。这个数值可以用来测试是否成功执行一个程序。</p>
+<p>程序正常退出的代码为 0 即 <code>Program exited with code 0</code>；如果程序因为异常而被终止，则会返回非零值，如：1。这个数值可以用来测试是否成功执行一个程序。</p>
 <h3 id="注释"><a href="#注释" class="headerlink" title="注释"></a>注释</h3><pre><code>package main
 
 import &quot;fmt&quot; // Package implementing formatted I/O.
@@ -194,7 +182,7 @@ import &quot;fmt&quot; // Package implementing formatted I/O.
 func main() {
    fmt.Printf(&quot;Καλημέρα κόσμε; or こんにちは 世界\n&quot;)
 }
-</code></pre><p>上面这个例子通过打印 Καλημέρα κόσμε; or こんにちは 世界 展示了如何在 Go 中使用国际化字符，以及如何使用注释。</p>
+</code></pre><p>上面这个例子通过打印 <code>Καλημέρα κόσμε; or こんにちは 世界</code> 展示了如何在 Go 中使用国际化字符，以及如何使用注释。</p>
 <p>注释不会被编译，但可以通过 godoc 来使用（第 3.6 节）。</p>
 <p>单行注释是最常见的注释形式，你可以在任何地方使用以 // 开头的单行注释。多行注释也叫块注释，均已以 /<em> 开头，并以 </em>/ 结尾，且不可以嵌套使用，多行注释一般用于包的文档描述或注释成块的代码片段。</p>
 <p>每一个包应该有相关注释，在 package 语句之前的块注释将被默认认为是这个包的文档说明，其中应该提供一些相关信息并对整体功能做简要的介绍。一个包可以分散在多个文件中，但是只需要在其中一个进行注释说明即可。当开发人员需要了解包的一些情况时，自然会用 godoc 来显示包的文档说明，在首行的简要注释之后可以用成段的注释来进行更详细的说明，而不必拥挤在一起。另外，在多段注释之间应以空行分隔加以区分。</p>
