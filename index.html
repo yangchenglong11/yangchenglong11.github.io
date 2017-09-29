@@ -185,13 +185,14 @@
     <div class="entry">
       
         <p>写代码时经常会用到字符串，这里总结下 Go 语言中常用的字符串格式化例子。</p>
-<!--*more*-->
-<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div><div class="line">89</div><div class="line">90</div><div class="line">91</div><div class="line">92</div><div class="line">93</div><div class="line">94</div><div class="line">95</div><div class="line">96</div><div class="line">97</div><div class="line">98</div><div class="line">99</div><div class="line">100</div><div class="line">101</div><div class="line">102</div><div class="line">103</div><div class="line">104</div><div class="line">105</div><div class="line">106</div><div class="line">107</div><div class="line">108</div><div class="line">109</div><div class="line">110</div><div class="line">111</div><div class="line">112</div><div class="line">113</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">package</span> main</div><div class="line"></div><div class="line"><span class="keyword">import</span> (</div><div class="line">	<span class="string">"fmt"</span></div><div class="line">	<span class="string">"os"</span></div><div class="line">)</div><div class="line"></div><div class="line"><span class="keyword">type</span> point <span class="keyword">struct</span> &#123;</div><div class="line">	x, y <span class="keyword">int</span></div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</div><div class="line">	<span class="comment">// Go提供了几种打印格式，用来格式化一般的Go值</span></div><div class="line">	<span class="comment">// 下面的%v打印了一个结构体的对象的值</span></div><div class="line">	p := point&#123;<span class="number">1</span>, <span class="number">2</span>&#125;</div><div class="line">	fmt.Printf(<span class="string">"%v\n"</span>, p)</div><div class="line"></div><div class="line">	<span class="comment">// 如果所格式化的值是一个结构体对象，那么%+v的格式化输出将包括结构体的成员名称和值</span></div><div class="line">	fmt.Printf(<span class="string">"%+v\n"</span>, p)</div><div class="line"></div><div class="line">	<span class="comment">// %#v格式化输出将输出一个值的Go语法表示方式。</span></div><div class="line">	fmt.Printf(<span class="string">"%#v\n"</span>, p)</div><div class="line"></div><div class="line">	<span class="comment">// 使用%T来输出一个值的数据类型</span></div><div class="line">	fmt.Printf(<span class="string">"%T\n"</span>, p)</div><div class="line"></div><div class="line">	<span class="comment">// 使用%p输出一个指针的值</span></div><div class="line">	fmt.Printf(<span class="string">"%p\n"</span>, &amp;p)</div><div class="line"></div><div class="line">	<span class="comment">// 使用%#p输出一个不带0x的指针的值</span></div><div class="line">	fmt.Printf(<span class="string">"%#p\n"</span>, &amp;p)</div><div class="line"></div><div class="line">	<span class="comment">// 格式化布尔型变量</span></div><div class="line">	fmt.Printf(<span class="string">"%t\n"</span>, <span class="literal">true</span>)</div><div class="line"></div><div class="line">	<span class="comment">// 有很多的方式可以格式化整型，使用%d是一种标准的以10进制来输出整型的方式</span></div><div class="line">	fmt.Printf(<span class="string">"%d\n"</span>, <span class="number">123</span>)</div><div class="line"></div><div class="line">	<span class="comment">// 使用%+d可以将符号也打印出来</span></div><div class="line">	fmt.Printf(<span class="string">"%+d\n"</span>, <span class="number">123</span>)</div><div class="line"></div><div class="line">	<span class="comment">// 这种方式输出整型的二进制表示方式</span></div><div class="line">	fmt.Printf(<span class="string">"%b\n"</span>, <span class="number">14</span>)</div><div class="line"></div><div class="line">	<span class="comment">// 这种方式输出整型的不带零的八进制表示方式</span></div><div class="line">	fmt.Printf(<span class="string">"%o\n"</span>, <span class="number">16</span>)</div><div class="line"></div><div class="line">	<span class="comment">// 这种方式输出整型的带零的八进制表示方式</span></div><div class="line">	fmt.Printf(<span class="string">"%#o\n"</span>, <span class="number">16</span>)</div><div class="line"></div><div class="line">	<span class="comment">// 这里打印出该整型数值所对应的字符，即A对应的ASCII值</span></div><div class="line">	fmt.Printf(<span class="string">"%c\n"</span>, <span class="number">33</span>)</div><div class="line"></div><div class="line">	<span class="comment">// 输出一个值的小写的十六进制表示方式</span></div><div class="line">	fmt.Printf(<span class="string">"%x\n"</span>, <span class="number">456</span>)</div><div class="line"></div><div class="line">	<span class="comment">// 输出一个值的一个值的大写的十六进制表示方式</span></div><div class="line">	fmt.Printf(<span class="string">"%X\n"</span>, <span class="number">456</span>)</div><div class="line"></div><div class="line">	<span class="comment">// 输出带0x的十六进制</span></div><div class="line">	fmt.Printf(<span class="string">"%#x\n"</span>, <span class="number">456</span>)</div><div class="line"></div><div class="line">	<span class="comment">// 浮点型数值也有几种格式化方法。最基本的一种是%f</span></div><div class="line">	fmt.Printf(<span class="string">"%f\n"</span>, <span class="number">78.9</span>)</div><div class="line"></div><div class="line">	<span class="comment">// %e和%E使用科学计数法来输出整型</span></div><div class="line">	fmt.Printf(<span class="string">"%e\n"</span>, <span class="number">123400000.0</span>)</div><div class="line">	fmt.Printf(<span class="string">"%E\n"</span>, <span class="number">123400000.0</span>)</div><div class="line"></div><div class="line">	<span class="comment">// 使用%s输出基本的字符串</span></div><div class="line">	fmt.Printf(<span class="string">"%s\n"</span>, <span class="string">"\"string\""</span>)</div><div class="line"></div><div class="line">	<span class="comment">// 输出像Go源码中那样带双引号的字符串，需使用%q</span></div><div class="line">	fmt.Printf(<span class="string">"%q\n"</span>, <span class="string">"\"string\""</span>)</div><div class="line"></div><div class="line">	<span class="comment">// 输出字符串带反引号，但字符串内部不能有`字符</span></div><div class="line">	fmt.Printf(<span class="string">"%#q\n"</span>, <span class="string">"string"</span>)</div><div class="line"></div><div class="line">	<span class="comment">// %x以16进制输出字符串，每个字符串的字节用两个字符输出，大小写同前</span></div><div class="line">	fmt.Printf(<span class="string">"%x\n"</span>, <span class="string">"hex this"</span>)</div><div class="line"></div><div class="line">	<span class="comment">// 当输出数字的时候，经常需要去控制输出的宽度和精度。可以使用一个位于%后面的数字来控制输出的宽度</span></div><div class="line">	<span class="comment">// 默认情况下输出是右对齐的，左边加上空格</span></div><div class="line">	fmt.Printf(<span class="string">"|%6d|%6d|\n"</span>, <span class="number">12</span>, <span class="number">345</span>)</div><div class="line"></div><div class="line">	<span class="comment">// 你也可以指定浮点数的输出宽度，同时你还可以指定浮点数的输出精度</span></div><div class="line">	fmt.Printf(<span class="string">"|%6.2f|%6.2f|\n"</span>, <span class="number">1.2</span>, <span class="number">3.45</span>)</div><div class="line"></div><div class="line">	<span class="comment">// 用最少的数字来表示浮点数</span></div><div class="line">	fmt.Printf(<span class="string">"%g\n"</span>, <span class="number">1.23</span>)</div><div class="line"></div><div class="line">	<span class="comment">// 用最多3位数字来表示浮点数</span></div><div class="line">	fmt.Printf(<span class="string">"%.3g\n"</span>, <span class="number">12.34</span>)</div><div class="line"></div><div class="line">	<span class="comment">// 使用 - 符号，进行左对齐</span></div><div class="line">	fmt.Printf(<span class="string">"|%-6.3f|%-6.2f|\n"</span>, <span class="number">1.2</span>, <span class="number">3.45</span>)</div><div class="line"></div><div class="line">	<span class="comment">// 使用 %05d 符号， 会在数字前面补零。</span></div><div class="line">	fmt.Printf(<span class="string">"%05d\n"</span>, <span class="number">43</span>)</div><div class="line"></div><div class="line">	<span class="comment">// 你也可以指定输出字符串的宽度来保证它们输出对齐。默认情况下，输出是右对齐的</span></div><div class="line">	fmt.Printf(<span class="string">"|%6s|%6s|\n"</span>, <span class="string">"foo"</span>, <span class="string">"b"</span>)</div><div class="line"></div><div class="line">	<span class="comment">// 为了使用左对齐你可以在宽度之前加上-号</span></div><div class="line">	fmt.Printf(<span class="string">"|%-6s|%-6s|\n"</span>, <span class="string">"foo"</span>, <span class="string">"b"</span>)</div><div class="line"></div><div class="line">	<span class="comment">// Printf函数的输出是输出到命令行os.Stdout的，你可以用Sprintf来将格式化后的字符串赋值给一个变量</span></div><div class="line">	s := fmt.Sprintf(<span class="string">"a %s"</span>, <span class="string">"string"</span>)</div><div class="line">	fmt.Println(s)</div><div class="line"></div><div class="line">	<span class="comment">// 你也可以使用Fprintf来将格式化后的值输出到io.Writers</span></div><div class="line">	fmt.Fprintf(os.Stderr, <span class="string">"an %s\n"</span>, <span class="string">"error"</span>)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>运行结果</p>
-<figure class="highlight gherkin"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div></pre></td><td class="code"><pre><div class="line">&#123;1 2&#125;</div><div class="line">&#123;x:1 y:2&#125;</div><div class="line">main.point&#123;x:1, y:2&#125;</div><div class="line">main.point</div><div class="line">0xc42007e010</div><div class="line">c42007e010</div><div class="line">true</div><div class="line">123</div><div class="line">+123</div><div class="line">1110</div><div class="line">20</div><div class="line">020</div><div class="line">!</div><div class="line">1c8</div><div class="line">1C8</div><div class="line">0x1c8</div><div class="line">78.900000</div><div class="line">1.234000e+08</div><div class="line">1.234000E+08</div><div class="line"><span class="string">"string"</span></div><div class="line"><span class="string">"\"string\""</span></div><div class="line">`string`</div><div class="line">6865782074686973</div><div class="line">|<span class="string">    12</span>|<span class="string">   345</span>|</div><div class="line">|<span class="string">  1.20</span>|<span class="string">  3.45</span>|</div><div class="line">1.23</div><div class="line">12.3</div><div class="line">|<span class="string">1.200 </span>|<span class="string">3.45  </span>|</div><div class="line">00043</div><div class="line">|<span class="string">   foo</span>|<span class="string">     b</span>|</div><div class="line">|<span class="string">foo   </span>|<span class="string">b     </span>|</div><div class="line">a string</div><div class="line">an error</div></pre></td></tr></table></figure>
-
       
     </div>
+    
+    <footer>
+      <div class="alignleft">
+        <a href="/2016/10/21/Go-字符串格式化/#more" class="more-link">更多内容</a>
+      </div>
+    </footer>
     
     <footer>
         <div class="alignright">
@@ -208,6 +209,59 @@
   
   <div class="tags">
     <a href="/tags/Go/">Go</a>
+  </div>
+
+        <!-- partial('post/share') -->
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2016-10-17T01:23:34.000Z"><a href="/2016/10/17/Go-实现set/">2016-10-17</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2016/10/17/Go-实现set/">Go 实现set</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>练习利用go语言的标准数据类型map实现python语言中的set数据结构。</p>
+      
+    </div>
+    
+    <footer>
+      <div class="alignleft">
+        <a href="/2016/10/17/Go-实现set/#more" class="more-link">更多内容</a>
+      </div>
+    </footer>
+    
+    <footer>
+        <div class="alignright">
+          
+          <a href='javascript:void(0)' class="share-link bdsharebuttonbox" data-cmd="more">分享</a>
+        </div>
+        
+  
+  <div class="categories">
+    <a href="/categories/GO/">GO</a>
+  </div>
+
+        
+  
+  <div class="tags">
+    <a href="/tags/GO/">GO</a>
   </div>
 
         <!-- partial('post/share') -->
@@ -399,7 +453,7 @@
   
     <li><a href="/categories/Docker/">Docker</a><small>1</small></li>
   
-    <li><a href="/categories/GO/">GO</a><small>2</small></li>
+    <li><a href="/categories/GO/">GO</a><small>3</small></li>
   
     <li><a href="/categories/Go/">Go</a><small>1</small></li>
   
@@ -429,11 +483,11 @@
       </li>
     
       <li>
-        <a href="/2016/10/08/假期小记/">假期小记</a>
+        <a href="/2016/10/17/Go-实现set/">Go 实现set</a>
       </li>
     
       <li>
-        <a href="/2016/10/03/Web-后端和GO/">Web 后端和 GO</a>
+        <a href="/2016/10/08/假期小记/">假期小记</a>
       </li>
     
   </ul>
@@ -447,7 +501,7 @@
   
     <li><a href="/tags/Docker/">Docker</a><small>1</small></li>
   
-    <li><a href="/tags/GO/">GO</a><small>3</small></li>
+    <li><a href="/tags/GO/">GO</a><small>4</small></li>
   
     <li><a href="/tags/Go/">Go</a><small>1</small></li>
   
