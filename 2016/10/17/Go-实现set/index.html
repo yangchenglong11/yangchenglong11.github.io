@@ -89,18 +89,12 @@
 </ul>
 <p>我们可以发现Set更像是Map的一种简化版本，我们可不可以利用Map来编写一个Set的实现呢？答案当然是肯定的。</p>
 <p>基本定义</p>
-<pre><code>首先，我们创建一个名为hash_set.go的源码文件，把它放在项目的代码包set中。我们需要首先在这个源码文件的第一行上写入这样一行代码：
-
-package set
-
- 这是为了声明源码文件hash_set.go是代码包set中的一员。然后我们声明一个包含了一个字典类型的字段的结构体类型。声明如下：
-
-type HashSet struct {
-    m map[interface{}]bool
-}
-
-这个类型声明中的唯一的字段是map[interface{}]bool。之所以选择这样的一个字典类型是有原因的。因为我们希望HashSet类型的元素可以是任意类型的，所以我们将字典m的键类型设置为了interface{}。又由于我们只需要用到m的值中的键来储存HashSet类型的元素值，所以就应该选用值占用空间最小的类型来作为m的值的元素类型，这里使用bool类型有3个好处：
-</code></pre><ul>
+<p>首先，我们创建一个名为hash_set.go的源码文件，把它放在项目的代码包set中。我们需要首先在这个源码文件的第一行上写入这样一行代码：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">package</span> set</div></pre></td></tr></table></figure>
+<p>这是为了声明源码文件hash_set.go是代码包set中的一员。然后我们声明一个包含了一个字典类型的字段的结构体类型。声明如下：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">type</span> HashSet <span class="keyword">struct</span> &#123;</div><div class="line">	m <span class="keyword">map</span>[<span class="keyword">interface</span>&#123;&#125;]<span class="keyword">bool</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>这个类型声明中的唯一的字段是map[interface{}]bool。之所以选择这样的一个字典类型是有原因的。因为我们希望HashSet类型的元素可以是任意类型的，所以我们将字典m的键类型设置为了interface{}。又由于我们只需要用到m的值中的键来储存HashSet类型的元素值，所以就应该选用值占用空间最小的类型来作为m的值的元素类型，这里使用bool类型有3个好处：</p>
+<ul>
 <li>从值的储存形式的角度看，bool类型值的占用空间是最小的之一，只占用一个字节。</li>
 <li>从值的表示形式的角度看，bool类型的值只有两个，这两个值都是预定义常量。</li>
 <li>把bool类型作为值类型更有利于判断字典类型中是否存在某个键。例如，我们可以用m[“a”]的结果值体现m的值中是否包含键为”a”键值对，但是，如果m的类型是map[interface{}]byte的话，那么我们只有通过v, ok := m[“a”],才能确切得出上述判断的结果。虽然在向map[interface{}]byte类型的m的值添加键值对的时候，我们可以总以非零值的byte类型值作为其中的元素的值，但是我们在做判断的时候就需要编写更多的代码：</li>
@@ -194,9 +188,7 @@ type HashSet struct {
   
     <li><a href="/categories/Docker/">Docker</a><small>1</small></li>
   
-    <li><a href="/categories/GO/">GO</a><small>3</small></li>
-  
-    <li><a href="/categories/Go/">Go</a><small>1</small></li>
+    <li><a href="/categories/GO/">GO</a><small>4</small></li>
   
     <li><a href="/categories/Linux/">Linux</a><small>1</small></li>
   
@@ -242,9 +234,7 @@ type HashSet struct {
   
     <li><a href="/tags/Docker/">Docker</a><small>1</small></li>
   
-    <li><a href="/tags/GO/">GO</a><small>4</small></li>
-  
-    <li><a href="/tags/Go/">Go</a><small>1</small></li>
+    <li><a href="/tags/GO/">GO</a><small>5</small></li>
   
     <li><a href="/tags/Linux/">Linux</a><small>1</small></li>
   
@@ -258,7 +248,7 @@ type HashSet struct {
 <div class="widget tagcloud">
   <h3 class="title">标签云</h3>
   <div class="entry">
-    <a href="/tags/Docker/" style="font-size: 10px;">Docker</a> <a href="/tags/GO/" style="font-size: 20px;">GO</a> <a href="/tags/Go/" style="font-size: 10px;">Go</a> <a href="/tags/Linux/" style="font-size: 10px;">Linux</a> <a href="/tags/后台/" style="font-size: 10px;">后台</a>
+    <a href="/tags/Docker/" style="font-size: 10px;">Docker</a> <a href="/tags/GO/" style="font-size: 20px;">GO</a> <a href="/tags/Linux/" style="font-size: 10px;">Linux</a> <a href="/tags/后台/" style="font-size: 10px;">后台</a>
   </div>
 </div>
 
