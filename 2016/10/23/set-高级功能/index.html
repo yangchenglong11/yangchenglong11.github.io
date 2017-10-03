@@ -1,0 +1,245 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8" />
+  
+  <title>set 高级功能 | yangcl&#39;s</title>
+  <meta name="author" content="Yang Chenglong" />
+
+  
+  <meta name="description" content="Yangcl&#39;s Blog" />
+  
+
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+  <meta property="og:title" content="set 高级功能" />
+  <meta property="og:site_name" content="yangcl&#39;s" />
+
+  
+  
+
+  
+    <meta property="og:image" content="" />
+  
+
+  
+  <link href="/css/images/favicon.ico" rel="icon" />
+  
+
+  <link rel="alternate" href="/atom.xml" title="yangcl&#39;s" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+
+
+  <!-- baidu webmaster push -->
+  <script src='//push.zhanzhang.baidu.com/push.js'></script>
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">yangcl&#39;s</a></h1>
+  <h2><a href="/">悟已往之不谏，知来者之可追。</a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+      <li><a href="/atom.xml">RSS</a></li>
+    
+      <li><a href="https://github.com/yangchenglong11">github</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2016-10-23T02:51:12.000Z"><a href="/2016/10/23/set-高级功能/">2016-10-23</a></time>
+      
+      
+  
+    <h1 class="title">set 高级功能</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>在集合代数中除了对集合基本性质和规律的描述外，还包含了对各种集合运算和集合关系的说明。集合的运算包括并集，交集，差集还有对称差集。集合的关系包括相等和真包含。这篇文章我们就来实现这些功能。</p>
+<a id="more"></a>
+<p>首先我们添加集合真包含的判断功能。根据集合代数中的描述，如果集合 A 真包含了集合 B，那么就可以说集合 A 是集合 B 的一个超集。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 判断集合 set 是否是集合 other 的超集 </span></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="params">(set *HashSet)</span> <span class="title">IsSuperset</span><span class="params">(other *HashSet)</span> <span class="title">bool</span></span> &#123;</div><div class="line">  <span class="keyword">if</span> other == <span class="literal">nil</span> &#123;         <span class="comment">// 如果other为nil，则other不是set的子集</span></div><div class="line">    <span class="keyword">return</span> <span class="literal">false</span></div><div class="line">  &#125;</div><div class="line">  setLen := set.Len()       <span class="comment">// 获取set的元素值数量</span></div><div class="line">  otherLen := other.Len()   <span class="comment">// 获取other的元素值数量</span></div><div class="line">  <span class="keyword">if</span> setLen == <span class="number">0</span> || setLen == otherLen &#123;   <span class="comment">// set的元素值数量等于0或者等于other的元素数量</span></div><div class="line">    <span class="keyword">return</span> <span class="literal">false</span></div><div class="line">  &#125;</div><div class="line">  <span class="keyword">if</span> setLen &gt; <span class="number">0</span> &amp;&amp; otherLen == <span class="number">0</span> &#123;         <span class="comment">// other为元素数量为0，set元素数量大于0，则set也是other的超集</span></div><div class="line">    <span class="keyword">return</span> <span class="literal">true</span></div><div class="line">  &#125;</div><div class="line">  <span class="keyword">for</span> _, v := <span class="keyword">range</span> other.Elements() &#123;</div><div class="line">    <span class="keyword">if</span> !set.Contains(v) &#123;                  <span class="comment">// 只要set中有一个other中的数据不在其中，就返回false</span></div><div class="line">      <span class="keyword">return</span> <span class="literal">false</span></div><div class="line">    &#125;</div><div class="line">  &#125;</div><div class="line">  <span class="keyword">return</span> <span class="literal">true</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>集合的运算包括<strong>并集、交集、差集</strong>和<strong>对称差集</strong>。 </p>
+<p><strong>并集运算</strong>是指把两个集合中的所有元素都合并起来并组合成一个集合。 </p>
+<p><strong>交集运算</strong>是指找到两个集合中共有的元素并把它们组成一个集合。 </p>
+<p><strong>集合 A</strong> 对<strong>集合 B </strong>进行<strong>差集运算</strong>的含义是找到只存在于<strong>集合 A</strong> 中但不存在于<strong>集合 B</strong> 中的元素并把它们组成一个集合。 </p>
+<p>对称差集运算与差集运算类似但有所区别。对称差集运算是指找到只存在于<strong>集合 A</strong> 中但不存在于<strong>集合 B</strong> 中的元素，再找到只存在于集合 B 中但不存在于集合 A 中的元素，最后把它们合并起来并组成一个集合。</p>
+<p><strong>实现并集运算</strong></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 生成集合 set 和集合 other 的并集</span></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="params">(set *HashSet)</span> <span class="title">Union</span><span class="params">(other *HashSet)</span> *<span class="title">HashSet</span></span> &#123;</div><div class="line">  <span class="keyword">if</span> set == <span class="literal">nil</span> || other == <span class="literal">nil</span> &#123;    <span class="comment">// set和other都为nil，则它们的并集为nil</span></div><div class="line">    <span class="keyword">return</span> <span class="literal">nil</span></div><div class="line">  &#125;</div><div class="line">  unionedSet := NewHashSet()         <span class="comment">// 新创建一个HashSet类型值，它的长度为0，即元素数量为0</span></div><div class="line">  <span class="keyword">for</span> _, v := <span class="keyword">range</span> set.Elements() &#123; <span class="comment">// 将set中的元素添加到unionedSet中</span></div><div class="line">    unionedSet.Add(v)</div><div class="line">  &#125;</div><div class="line">  <span class="keyword">if</span> other.Len() == <span class="number">0</span> &#123;</div><div class="line">    <span class="keyword">return</span> unionedSet</div><div class="line">  &#125;</div><div class="line">  <span class="keyword">for</span> _, v := <span class="keyword">range</span> other.Elements() &#123;  <span class="comment">// 将other中的元素添加到unionedSet中，如果遇到相同，则不添加（在Add方法逻辑中体现）</span></div><div class="line">    unionedSet.Add(v)</div><div class="line">  &#125;</div><div class="line">  <span class="keyword">return</span> unionedSet</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p><strong>实现交集运算</strong></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 生成集合 set 和集合 other 的交集</span></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="params">(set *HashSet)</span> <span class="title">Intersect</span><span class="params">(other *HashSet)</span> *<span class="title">HashSet</span></span> &#123;</div><div class="line">  <span class="keyword">if</span> set == <span class="literal">nil</span> || other == <span class="literal">nil</span> &#123;   <span class="comment">// set和other都为nil，则它们的交集为nil</span></div><div class="line">    <span class="keyword">return</span> <span class="literal">nil</span></div><div class="line">  &#125;</div><div class="line">  intersectedSet := NewHashSet()    <span class="comment">// 新创建一个HashSet类型值，它的长度为0，即元素数量为0</span></div><div class="line">  <span class="keyword">if</span> other.Len() == <span class="number">0</span> &#123;             <span class="comment">// other的元素数量为0，直接返回intersectedSet</span></div><div class="line">    <span class="keyword">return</span> intersectedSet</div><div class="line">  &#125;</div><div class="line">  <span class="keyword">if</span> set.Len() &lt; other.Len() &#123;      <span class="comment">// set的元素数量少于other的元素数量</span></div><div class="line">    <span class="keyword">for</span> _, v := <span class="keyword">range</span> set.Elements() &#123;   <span class="comment">// 遍历set</span></div><div class="line">      <span class="keyword">if</span> other.Contains(v) &#123;        <span class="comment">// 只要将set和other共有的添加到intersectedSet</span></div><div class="line">        intersectedSet.Add(v)</div><div class="line">      &#125;</div><div class="line">    &#125;</div><div class="line">  &#125; <span class="keyword">else</span> &#123;                          <span class="comment">// set的元素数量多于other的元素数量</span></div><div class="line">    <span class="keyword">for</span> _, v := <span class="keyword">range</span> other.Elements() &#123;   <span class="comment">// 遍历other</span></div><div class="line">      <span class="keyword">if</span> set.Contains(v) &#123;          <span class="comment">// 只要将set和other共有的添加到intersectedSet</span></div><div class="line">        intersectedSet.Add(v)</div><div class="line">      &#125;</div><div class="line">    &#125;</div><div class="line">  &#125;</div><div class="line">  <span class="keyword">return</span> intersectedSet</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p><strong>差集</strong></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 生成集合 set 对集合 other 的差集</span></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="params">(set *HashSet)</span> <span class="title">Difference</span><span class="params">(other *HashSet)</span> *<span class="title">HashSet</span></span> &#123;</div><div class="line">  <span class="keyword">if</span> set == <span class="literal">nil</span> || other == <span class="literal">nil</span> &#123;  <span class="comment">// set和other都为nil，则它们的差集为nil</span></div><div class="line">    <span class="keyword">return</span> <span class="literal">nil</span></div><div class="line">  &#125;</div><div class="line">  differencedSet := NewHashSet()   <span class="comment">// 新创建一个HashSet类型值，它的长度为0，即元素数量为0</span></div><div class="line">  <span class="keyword">if</span> other.Len() == <span class="number">0</span> &#123;            <span class="comment">// 如果other的元素数量为0</span></div><div class="line">    <span class="keyword">for</span> _, v := <span class="keyword">range</span> set.Elements() &#123;  <span class="comment">// 遍历set，并将set中的元素v添加到differencedSet</span></div><div class="line">      differencedSet.Add(v)</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> differencedSet          <span class="comment">// 直接返回differencedSet</span></div><div class="line">  &#125;</div><div class="line">  <span class="keyword">for</span> _, v := <span class="keyword">range</span> set.Elements() &#123;  <span class="comment">// other的元素数量不为0，遍历set</span></div><div class="line">    <span class="keyword">if</span> !other.Contains(v) &#123;        <span class="comment">// 如果other中不包含v，就将v添加到differencedSet中</span></div><div class="line">      differencedSet.Add(v)</div><div class="line">    &#125;</div><div class="line">  &#125;</div><div class="line">  <span class="keyword">return</span> differencedSet</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p><strong>对称差集</strong></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 生成集合 one 和集合 other 的对称差集</span></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="params">(set *HashSet)</span> <span class="title">SymmetricDifference</span><span class="params">(other *HashSet)</span> *<span class="title">HashSet</span></span> &#123;</div><div class="line">  <span class="keyword">if</span> set == <span class="literal">nil</span> || other == <span class="literal">nil</span> &#123;  <span class="comment">// set和other都为nil，则它们的对称差集为nil</span></div><div class="line">    <span class="keyword">return</span> <span class="literal">nil</span></div><div class="line">  &#125;</div><div class="line">  diffA := set.Difference(other)   <span class="comment">// 生成集合 set 对集合 other 的差集</span></div><div class="line">  <span class="keyword">if</span> other.Len() == <span class="number">0</span> &#123;            <span class="comment">// 如果other的元素数量等于0，那么other对集合set的差集为空，则直接返回diffA</span></div><div class="line">    <span class="keyword">return</span> diffA</div><div class="line">  &#125;</div><div class="line">  diffB := other.Difference(set)   <span class="comment">// 生成集合 other 对集合 set 的差集</span></div><div class="line">  <span class="keyword">return</span> diffA.Union(diffB)        <span class="comment">// 返回集合 diffA 和集合 diffB 的并集</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p><strong>4.进一步重构</strong></p>
+<p>目前所实现的 <strong>HashSet </strong>类型提供了一些必要的集合操作功能，但是不同应用场景下可能会需要使用功能更加丰富的集合类型。当有多个集合类型的时候，应该在它们之上抽取出一个接口类型以标识它们共有的行为方式。依据 <strong>HashSet </strong>类型的声明，可以如下声明 Set 接口类型：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">type</span> Set <span class="keyword">interface</span> &#123;</div><div class="line">  Add(e <span class="keyword">interface</span>&#123;&#125;) <span class="keyword">bool</span></div><div class="line">  Remove(e <span class="keyword">interface</span>&#123;&#125;)</div><div class="line">  Clear()</div><div class="line">  Contains(e <span class="keyword">interface</span>&#123;&#125;) <span class="keyword">bool</span></div><div class="line">  Len() <span class="keyword">int</span></div><div class="line">  Same(other Set) <span class="keyword">bool</span></div><div class="line">  Elements() []<span class="keyword">interface</span>&#123;&#125;</div><div class="line">  String() <span class="keyword">string</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p><strong>注意：</strong> <strong>Set </strong>中的 <strong>Same </strong>方法的签名与附属于 <strong>HashSet</strong>类型的 <strong>Same </strong>方法有所不同。这里不能再接口类型的方法的签名中包含它的实现类型。因此这里的改动如下：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="params">(set *HashSet)</span> <span class="title">Same</span><span class="params">(other Set)</span> <span class="title">bool</span></span> &#123;</div><div class="line">  <span class="comment">// 省略若干语句</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>修改了 <strong>Same </strong>方法的签名，目的是让 <strong>*HashSet </strong>类型成为 Set 接口类型的一个实现类型。</p>
+<p>高级功能的方法应该适用于所有的实现类型，完全可以抽离出成为独立的函数。并且，也不应该在每个实现类型中重复地实现这些高级方法。如下为改造后的 <strong>IsSuperset </strong>方法的声明：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 判断集合 one 是否是集合 other 的超集</span></div><div class="line"><span class="comment">// 读者应重点关注IsSuperset与附属于HashSet类型的IsSuperset方法的区别</span></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">IsSuperset</span><span class="params">(one Set, other Set)</span> <span class="title">bool</span></span> &#123;</div><div class="line">  <span class="keyword">if</span> one == <span class="literal">nil</span> || other == <span class="literal">nil</span> &#123;</div><div class="line">    <span class="keyword">return</span> <span class="literal">false</span></div><div class="line">  &#125;</div><div class="line">  oneLen := one.Len()</div><div class="line">  otherLen := other.Len()</div><div class="line">  <span class="keyword">if</span> oneLen == <span class="number">0</span> || oneLen == otherLen &#123;</div><div class="line">    <span class="keyword">return</span> <span class="literal">false</span></div><div class="line">  &#125;</div><div class="line">  <span class="keyword">if</span> oneLen &gt; <span class="number">0</span> &amp;&amp; otherLen == <span class="number">0</span> &#123;</div><div class="line">    <span class="keyword">return</span> <span class="literal">true</span></div><div class="line">  &#125;</div><div class="line">  <span class="keyword">for</span> _, v := <span class="keyword">range</span> other.Elements() &#123;</div><div class="line">    <span class="keyword">if</span> !one.Contains(v) &#123;</div><div class="line">      <span class="keyword">return</span> <span class="literal">false</span></div><div class="line">    &#125;</div><div class="line">  &#125;</div><div class="line">  <span class="keyword">return</span> <span class="literal">true</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>以上就是Go语言之自定义集合Set的全部内容，希望对大家学习Go语言有所帮助。</p>
+<p>点此查看代码<a href="https://github.com/hyper0x/goc2p" target="_blank" rel="external">github代码</a></p>
+
+      
+    </div>
+    
+    <footer>
+        <div class="alignright">
+          
+          <a href='javascript:void(0)' class="share-link bdsharebuttonbox" data-cmd="more">分享</a>
+        </div>
+        
+  
+  <div class="categories">
+    <a href="/categories/Golang/">Golang</a>
+  </div>
+
+        
+  
+  <div class="tags">
+    <a href="/tags/Golang/">Golang</a>
+  </div>
+
+        <!-- partial('post/share') -->
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="搜索">
+    <input type="hidden" name="q" value="site:yangchenglong11.github.io">
+  </form>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">分类</h3>
+  <ul class="entry">
+  
+    <li><a href="/categories/Docker/">Docker</a><small>1</small></li>
+  
+    <li><a href="/categories/Golang/">Golang</a><small>9</small></li>
+  
+    <li><a href="/categories/Linux/">Linux</a><small>1</small></li>
+  
+    <li><a href="/categories/MongoDB/">MongoDB</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">最新文章</h3>
+  <ul class="entry">
+    
+      <li>
+        <a href="/2017/01/05/MongoDB基础/">MongoDB基础</a>
+      </li>
+    
+      <li>
+        <a href="/2016/12/27/Docker是什么/">Docker是什么</a>
+      </li>
+    
+      <li>
+        <a href="/2016/12/11/Golang-实现大数乘法/">Golang 实现大数的乘法</a>
+      </li>
+    
+      <li>
+        <a href="/2016/12/05/go并发编程基础/">go并发编程基础</a>
+      </li>
+    
+      <li>
+        <a href="/2016/11/26/Linux中改变文件属性与权限/">Linux中改变文件属性与权限</a>
+      </li>
+    
+  </ul>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">标签</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/Docker/">Docker</a><small>1</small></li>
+  
+    <li><a href="/tags/Golang/">Golang</a><small>9</small></li>
+  
+    <li><a href="/tags/Linux/">Linux</a><small>1</small></li>
+  
+    <li><a href="/tags/MongoDB/">MongoDB</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tagcloud">
+  <h3 class="title">标签云</h3>
+  <div class="entry">
+    <a href="/tags/Docker/" style="font-size: 10px;">Docker</a> <a href="/tags/Golang/" style="font-size: 20px;">Golang</a> <a href="/tags/Linux/" style="font-size: 10px;">Linux</a> <a href="/tags/MongoDB/" style="font-size: 10px;">MongoDB</a>
+  </div>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  <p>
+  
+  &copy; 2017 Yang Chenglong
+  
+  All rights reserved.</p>
+  <p>Powered by <a href="http://hexo.io/" target="_blank">Hexo</a></p>
+</div>
+<div class="clearfix"></div>
+
+<script>window._bd_share_config={"common":{"bdSnsKey":{},"bdText":"","bdMini":"1","bdMiniList":false,"bdPic":"","bdStyle":"2","bdSize":"16"},"share":{}};with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='http://bdimg.share.baidu.com/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];</script></footer>
+  <script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+
+<div id='bg'></div>
+</body>
+</html>
