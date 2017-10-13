@@ -142,7 +142,7 @@
 <p>注意：在 Elements 方法中针对并发访问和修改 m 的值的情况采取了一些措施。但是由于m的值本身并不是并发安全的，所以并不能保证 Elements 方法的执行总会准确无误。要做到真正的并发安全，还需要一些辅助的手段，比如读写互斥量。</p>
 <p>(8).获取自身的字符串表示形式。</p>
 <figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div></pre></td><td class="code"><pre><div class="line"><span class="comment">//这个String方法的签名算是一个惯用法。</span></div><div class="line"><span class="comment">//代码包fmt中的打印函数总会使用参数值附带的具有如此签名的String方法的结果值作为该参数值的字符串表示形式。</span></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="params">(set *HashSet)</span> <span class="title">String</span><span class="params">()</span> <span class="title">string</span></span> &#123;</div><div class="line">	<span class="keyword">var</span> buf bytes.Buffer <span class="comment">//作为结果值的缓冲区</span></div><div class="line">	buf.WriteString(<span class="string">"HashSet&#123;"</span>)</div><div class="line">	first := <span class="literal">true</span></div><div class="line">	<span class="keyword">for</span> key := <span class="keyword">range</span> set.m &#123;</div><div class="line">		<span class="keyword">if</span> first &#123;</div><div class="line">			first = <span class="literal">false</span></div><div class="line">		&#125; <span class="keyword">else</span> &#123;</div><div class="line">			buf.WriteString(<span class="string">","</span>)</div><div class="line">		&#125;</div><div class="line">		buf.WriteString(fmt.Sprintf(<span class="string">"%v"</span>, key))</div><div class="line">	&#125;</div><div class="line">	<span class="comment">//n := 1</span></div><div class="line">	<span class="comment">//for key := range set.m &#123;</span></div><div class="line">	<span class="comment">// buf.WriteString(fmt.Sprintf("%v", key))</span></div><div class="line">	<span class="comment">// if n == len(set.m) &#123;//最后一个元素的后面不添加逗号</span></div><div class="line">	<span class="comment">// break;</span></div><div class="line">	<span class="comment">// &#125; else &#123;</span></div><div class="line">	<span class="comment">// buf.WriteString(",")</span></div><div class="line">	<span class="comment">// &#125;</span></div><div class="line">	<span class="comment">// n++;</span></div><div class="line">	<span class="comment">//&#125;</span></div><div class="line">	buf.WriteString(<span class="string">"&#125;"</span>)</div><div class="line">	<span class="keyword">return</span> buf.Strin</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>如上已经完整地编写了一个具备常用功能的Set的实现类型，后面将讲解更多的高级功能来完善它。</p>
+<p>如上已经完整地编写了一个具备常用功能的Set的实现类型，后面将讲解更多的高级功能来完善它。<br>参考<a href="https://book.douban.com/subject/26244729/" target="_blank" rel="external">Go并发编程实战</a></p>
 
       
     </div>
@@ -188,7 +188,7 @@
   
     <li><a href="/categories/Docker/">Docker</a><small>1</small></li>
   
-    <li><a href="/categories/Golang/">Golang</a><small>9</small></li>
+    <li><a href="/categories/Golang/">Golang</a><small>10</small></li>
   
     <li><a href="/categories/Linux/">Linux</a><small>1</small></li>
   
@@ -202,6 +202,10 @@
 <div class="widget tag">
   <h3 class="title">最新文章</h3>
   <ul class="entry">
+    
+      <li>
+        <a href="/2017/01/13/正则表达式/">正则表达式</a>
+      </li>
     
       <li>
         <a href="/2017/01/05/MongoDB基础/">MongoDB基础</a>
@@ -219,10 +223,6 @@
         <a href="/2016/12/05/go并发编程基础/">go并发编程基础</a>
       </li>
     
-      <li>
-        <a href="/2016/11/26/Linux中改变文件属性与权限/">Linux中改变文件属性与权限</a>
-      </li>
-    
   </ul>
 </div>
 
@@ -234,7 +234,7 @@
   
     <li><a href="/tags/Docker/">Docker</a><small>1</small></li>
   
-    <li><a href="/tags/Golang/">Golang</a><small>9</small></li>
+    <li><a href="/tags/Golang/">Golang</a><small>10</small></li>
   
     <li><a href="/tags/Linux/">Linux</a><small>1</small></li>
   

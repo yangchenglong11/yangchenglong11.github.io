@@ -104,6 +104,7 @@
 <figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 判断集合 one 是否是集合 other 的超集</span></div><div class="line"><span class="comment">// 读者应重点关注IsSuperset与附属于HashSet类型的IsSuperset方法的区别</span></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">IsSuperset</span><span class="params">(one Set, other Set)</span> <span class="title">bool</span></span> &#123;</div><div class="line">  <span class="keyword">if</span> one == <span class="literal">nil</span> || other == <span class="literal">nil</span> &#123;</div><div class="line">    <span class="keyword">return</span> <span class="literal">false</span></div><div class="line">  &#125;</div><div class="line">  oneLen := one.Len()</div><div class="line">  otherLen := other.Len()</div><div class="line">  <span class="keyword">if</span> oneLen == <span class="number">0</span> || oneLen == otherLen &#123;</div><div class="line">    <span class="keyword">return</span> <span class="literal">false</span></div><div class="line">  &#125;</div><div class="line">  <span class="keyword">if</span> oneLen &gt; <span class="number">0</span> &amp;&amp; otherLen == <span class="number">0</span> &#123;</div><div class="line">    <span class="keyword">return</span> <span class="literal">true</span></div><div class="line">  &#125;</div><div class="line">  <span class="keyword">for</span> _, v := <span class="keyword">range</span> other.Elements() &#123;</div><div class="line">    <span class="keyword">if</span> !one.Contains(v) &#123;</div><div class="line">      <span class="keyword">return</span> <span class="literal">false</span></div><div class="line">    &#125;</div><div class="line">  &#125;</div><div class="line">  <span class="keyword">return</span> <span class="literal">true</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
 <p>以上就是Go语言之自定义集合Set的全部内容，希望对大家学习Go语言有所帮助。</p>
 <p>点此查看代码<a href="https://github.com/hyper0x/goc2p" target="_blank" rel="external">github代码</a></p>
+<p>参考<a href="https://book.douban.com/subject/26244729/" target="_blank" rel="external">Go并发编程实战</a></p>
 
       
     </div>
@@ -149,7 +150,7 @@
   
     <li><a href="/categories/Docker/">Docker</a><small>1</small></li>
   
-    <li><a href="/categories/Golang/">Golang</a><small>9</small></li>
+    <li><a href="/categories/Golang/">Golang</a><small>10</small></li>
   
     <li><a href="/categories/Linux/">Linux</a><small>1</small></li>
   
@@ -163,6 +164,10 @@
 <div class="widget tag">
   <h3 class="title">最新文章</h3>
   <ul class="entry">
+    
+      <li>
+        <a href="/2017/01/13/正则表达式/">正则表达式</a>
+      </li>
     
       <li>
         <a href="/2017/01/05/MongoDB基础/">MongoDB基础</a>
@@ -180,10 +185,6 @@
         <a href="/2016/12/05/go并发编程基础/">go并发编程基础</a>
       </li>
     
-      <li>
-        <a href="/2016/11/26/Linux中改变文件属性与权限/">Linux中改变文件属性与权限</a>
-      </li>
-    
   </ul>
 </div>
 
@@ -195,7 +196,7 @@
   
     <li><a href="/tags/Docker/">Docker</a><small>1</small></li>
   
-    <li><a href="/tags/Golang/">Golang</a><small>9</small></li>
+    <li><a href="/tags/Golang/">Golang</a><small>10</small></li>
   
     <li><a href="/tags/Linux/">Linux</a><small>1</small></li>
   
