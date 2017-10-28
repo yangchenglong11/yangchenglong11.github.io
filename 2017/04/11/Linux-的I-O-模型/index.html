@@ -1,0 +1,281 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8" />
+  
+  <title>Linux 的I/O 模型 | yangcl&#39;s</title>
+  <meta name="author" content="Yang Chenglong" />
+
+  
+  <meta name="description" content="Yangcl&#39;s Blog" />
+  
+
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+  <meta property="og:title" content="Linux 的I/O 模型" />
+  <meta property="og:site_name" content="yangcl&#39;s" />
+
+  
+  
+
+  
+    <meta property="og:image" content="" />
+  
+
+  
+  <link href="/css/images/favicon.ico" rel="icon" />
+  
+
+  <link rel="alternate" href="/atom.xml" title="yangcl&#39;s" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+
+
+  <!-- baidu webmaster push -->
+  <script src='//push.zhanzhang.baidu.com/push.js'></script>
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">yangcl&#39;s</a></h1>
+  <h2><a href="/">悟已往之不谏，知来者之可追。</a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+      <li><a href="/atom.xml">RSS</a></li>
+    
+      <li><a href="https://github.com/yangchenglong11">github</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2017-04-11T13:05:37.000Z"><a href="/2017/04/11/Linux-的I-O-模型/">2017-04-11</a></time>
+      
+      
+  
+    <h1 class="title">Linux 的I/O 模型</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>进行后台开发时，经常需要进行数据传输，其数据传输归根结底还是Linux 的I/O 操作，今天就来讲下 Linux 的I/O 模型。</p>
+<a id="more"></a>
+<h2 id="1、介绍"><a href="#1、介绍" class="headerlink" title="1、介绍"></a>1、介绍</h2><p>Linux 的内核将所有外部设备都看做一个文件来操作（一切皆文件），对一个文件的读写操作会调用内核提供的系统命令，返回一个file descriptor（fd，文件描述符）。而对一个socket的读写也会有相应的描述符，称为socket fd（socket文件描述符），描述符就是一个数字，指向内核中的一个结构体（文件路径，数据区等一些属性）。</p>
+<p>服务器端编程经常需要构造高性能的IO模型，Linux的IO模型有五种：</p>
+<ul>
+<li>同步阻塞IO（BlockingIO）：即传统的IO模型。</li>
+<li>同步非阻塞IO（Non-blockingIO）：默认创建的socket都是阻塞的，非阻塞IO要求socket被设置为NONBLOCK。注意这里所说的NIO并非Java的NIO（NewIO）库。</li>
+<li>IO多路复用（IOMultiplexing）：即经典的Reactor设计模式，有时也称为异步阻塞IO，Linux中的epoll就是这种模型。</li>
+<li>信号驱动式I/O（signal-driven I/O）：即基于信号驱动的IO（SignalDrivenIO）模型。</li>
+<li>异步IO（AsynchronousIO）：即经典的Proactor设计模式，也称为异步非阻塞IO。</li>
+</ul>
+<p><strong>同步和异步的概念描述的是用户线程与内核的交互方式：同步是指用户线程发起IO请求后需要等待或者轮询内核IO操作完成后才能继续执行；而异步是指用户线程发起IO请求后仍继续执行，当内核IO操作完成后会通知用户线程，或者调用用户线程注册的回调函数</strong>。<br><strong>阻塞和非阻塞的概念描述的是用户线程调用内核IO操作的方式：阻塞是指IO操作需要彻底完成后才返回到用户空间；而非阻塞是指IO操作被调用后立即返回给用户一个状态值，无需等到IO操作彻底完成。</strong></p>
+<p>接下来，我们详细分析五种常见的IO模型的实现原理。为了方便描述，我们统一使用IO的读操作作为示例。</p>
+<h4 id="1、阻塞I-O模型"><a href="#1、阻塞I-O模型" class="headerlink" title="1、阻塞I/O模型"></a>1、阻塞I/O模型</h4><p>阻塞I/O是最流行的I/O模型。它符合人们最常见的思考逻辑。<strong>阻塞就是进程 “被” 休息, CPU处理其它进程去了</strong>。在网络I/O的时候，进程发起<code>recvform</code>系统调用，然后进程就被阻塞了，什么也不干，直到数据准备好，并且将数据从内核复制到用户进程，最后进程再处理数据，在等待数据到处理数据的两个阶段，整个进程都被阻塞。不能处理别的网络I/O。</p>
+<p>图示：</p>
+<p> <img src="http://blog.anxpp.com/usr/uploads/2016/05/1140040694.png" alt="01"></p>
+<p>阻塞IO的特点就是在IO执行的两个阶段都被block了。</p>
+<h4 id="2、非阻塞I-O模型"><a href="#2、非阻塞I-O模型" class="headerlink" title="2、非阻塞I/O模型"></a>2、非阻塞I/O模型</h4><p>在网络I/O时候，非阻塞I/O也会进行recvform系统调用，检查数据是否准备好，与阻塞I/O不一样，”非阻塞将大的整片时间的阻塞分成N多的小的阻塞, 所以进程不断地有机会 ‘被’ CPU光顾”。</p>
+<p>也就是说非阻塞的recvform系统调用调用之后，进程并没有被阻塞，内核马上返回给进程，如果数据还没准备好，此时会返回一个error。进程在返回之后，可以干点别的事情，然后再发起recvform系统调用。重复上面的过程，循环往复的进行recvform系统调用。这个过程通常被称之为<code>轮询</code>。轮询检查内核数据，直到数据准备好，再拷贝数据到进程，进行数据处理。需要注意，拷贝数据整个过程，进程仍然是属于阻塞的状态。</p>
+<p>图示：</p>
+<p><img src="http://blog.anxpp.com/usr/uploads/2016/05/2665563581.png" alt="02"></p>
+<p>非阻塞 IO的特点是用户进程需要<strong>不断的主动询问</strong>kernel数据是否准备好</p>
+<h4 id="3、I-O复用模型"><a href="#3、I-O复用模型" class="headerlink" title="3、I/O复用模型"></a>3、I/O复用模型</h4><p>可以看出，由于非阻塞的调用，轮询占据了很大一部分过程，轮询会消耗大量的CPU时间。结合前面两种模式。如果轮询不是进程的用户态，而是有人帮忙就好了。多路复用正好处理这样的问题。</p>
+<p>多路复用有两个特别的系统调用<code>select</code>或<code>poll</code>。select调用是内核级别的，select轮询相对非阻塞的轮询的区别在于—前者可以等待多个socket，当其中任何一个socket的数据准好了，就能返回进行可读，然后进程再进行recvform系统调用，将数据由内核拷贝到用户进程，当然这个过程是阻塞的。多路复用有两种阻塞，select或poll调用之后，会阻塞进程，与第一种阻塞不同在于，此时的select不是等到socket数据全部到达再处理, 而是有了一部分数据就会调用用户进程来处理。如何知道有一部分数据到达了呢？监视的事情交给了内核，内核负责数据到达的处理。</p>
+<p>图示：</p>
+<p><img src="http://blog.anxpp.com/usr/uploads/2016/05/860854051.png" alt="03"></p>
+<p>多路复用的特点是通过一种机制一个进程能同时等待IO文件描述符，内核监视这些文件描述符（套接字描述符），其中的任意一个进入读就绪状态，select， poll，epoll函数就可以返回。对于监视的方式，又可以分为 select， poll， epoll三种方式。</p>
+<p>I/O多路复用技术通过把多个I/O的阻塞复用到同一个select的阻塞上，从而使得系统在单线程的情况下可以同时处理多个客户端请求。</p>
+<p>与传统的多线程模型相比，I/O多路复用的最大优势就是系统开销小，系统不需要创建新的额外线程，也不需要维护这些线程的运行，降低了系统的维护工作量，节省了系统资源。</p>
+<p>主要的应用场景：</p>
+<ul>
+<li>​    服务器需要同时处理多个处于监听状态或多个连接状态的套接字。</li>
+<li>​    服务器需要同时处理多种网络协议的套接字。</li>
+</ul>
+<p>支持I/O多路复用的系统调用主要有select、pselect、poll、epoll。</p>
+<p>而当前推荐使用的是epoll，优势如下：</p>
+<ul>
+<li>​    支持一个进程打开的socket fd不受限制。</li>
+<li>​    I/O效率不会随着fd数目的增加而线性下将。</li>
+<li>​    使用mmap加速内核与用户空间的消息传递。</li>
+<li>​    epoll拥有更加简单的API。</li>
+</ul>
+<h4 id="4、信号驱动I-O模型"><a href="#4、信号驱动I-O模型" class="headerlink" title="4、信号驱动I/O模型"></a>4、信号驱动I/O模型</h4><p> 在这种模型下，我们首先开启套接字的信号驱动式I/O功能，并通过sigaction系统调用安装一个信号处理函数。改系统调用将立即返回，我们的进程继续工作，也就是说他没有被阻塞。当数据报准备好读取时，内核就为该进程产生一个SIGIO信号。我们随后就可以在信号处理函数中调用read读取数据报，并通知主循环数据已经准备好待处理，也可以立即通知主循环，让它读取数据报。</p>
+<p>图示：</p>
+<p> <img src="http://blog.anxpp.com/usr/uploads/2016/05/3322063871.png" alt="04"></p>
+<p>无论如何处理SIGIO信号，这种模型的优势在于等待数据报到达期间进程不被阻塞。主循环可以继续执行，只要等到来自信号处理函数的通知：既可以是数据已准备好被处理，也可以是数据报已准备好被读取。</p>
+<h4 id="5、异步I-O"><a href="#5、异步I-O" class="headerlink" title="5、异步I/O"></a>5、异步I/O</h4><p>相对于同步I/O，异步I/O不是顺序执行。用户进程进行<code>aio_read</code>系统调用之后，无论内核数据是否准备好，都会直接返回给用户进程，然后用户态进程可以去做别的事情。等到socket数据准备好了，内核直接复制数据给进程，然后从内核向进程发送通知。I/O两个阶段，进程都是非阻塞的。</p>
+<p>图示：</p>
+<p> <img src="http://blog.anxpp.com/usr/uploads/2016/05/4059852491.png" alt="05"></p>
+
+      
+    </div>
+    
+    <footer>
+        <div class="alignright">
+          
+          <a href='javascript:void(0)' class="share-link bdsharebuttonbox" data-cmd="more">分享</a>
+        </div>
+        
+  
+  <div class="categories">
+    <a href="/categories/Linux/">Linux</a>
+  </div>
+
+        
+  
+  <div class="tags">
+    <a href="/tags/Linux/">Linux</a>
+  </div>
+
+        <!-- partial('post/share') -->
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="搜索">
+    <input type="hidden" name="q" value="site:yangchenglong11.github.io">
+  </form>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">分类</h3>
+  <ul class="entry">
+  
+    <li><a href="/categories/Docker/">Docker</a><small>1</small></li>
+  
+    <li><a href="/categories/Golang/">Golang</a><small>11</small></li>
+  
+    <li><a href="/categories/Linux/">Linux</a><small>4</small></li>
+  
+    <li><a href="/categories/MongoDB/">MongoDB</a><small>4</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">最新文章</h3>
+  <ul class="entry">
+    
+      <li>
+        <a href="/2017/04/23/docker搭建mongoDB分片集群/">Docker 搭建 MongoDB 分片集群</a>
+      </li>
+    
+      <li>
+        <a href="/2017/04/11/Linux-的I-O-模型/">Linux 的I/O 模型</a>
+      </li>
+    
+      <li>
+        <a href="/2017/04/03/mgo-断线重连/">mgo 断线重连</a>
+      </li>
+    
+      <li>
+        <a href="/2017/03/17/Mongodb数据导出-导入/">Mongodb 数据导出/导入</a>
+      </li>
+    
+      <li>
+        <a href="/2017/03/05/谈shell之信号捕捉及处理/">谈shell之信号捕捉及处理</a>
+      </li>
+    
+  </ul>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">标签</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/Docker/">Docker</a><small>1</small></li>
+  
+    <li><a href="/tags/Golang/">Golang</a><small>12</small></li>
+  
+    <li><a href="/tags/Linux/">Linux</a><small>4</small></li>
+  
+    <li><a href="/tags/MongoDB/">MongoDB</a><small>4</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tagcloud">
+  <h3 class="title">标签云</h3>
+  <div class="entry">
+    <a href="/tags/Docker/" style="font-size: 10px;">Docker</a> <a href="/tags/Golang/" style="font-size: 20px;">Golang</a> <a href="/tags/Linux/" style="font-size: 15px;">Linux</a> <a href="/tags/MongoDB/" style="font-size: 15px;">MongoDB</a>
+  </div>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  <p>
+  
+  &copy; 2017 Yang Chenglong
+  
+  All rights reserved.</p>
+  <p>Powered by <a href="http://hexo.io/" target="_blank">Hexo</a></p>
+</div>
+<div class="clearfix"></div>
+
+<script>window._bd_share_config={"common":{"bdSnsKey":{},"bdText":"","bdMini":"1","bdMiniList":false,"bdPic":"","bdStyle":"2","bdSize":"16"},"share":{}};with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='http://bdimg.share.baidu.com/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];</script></footer>
+  <script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+
+<div id='bg'></div>
+  
+    <script type="text/javascript" src="/live2d/script.js"></script>
+    <canvas id="live2dcanvas" width="150" height="300" class="live2d"></canvas>
+    <style>
+      #live2dcanvas {
+        position: fixed;
+        right: 0px;
+        z-index: 999;
+        pointer-events: none;
+        bottom: -20px;
+      }
+    </style>
+    <script>loadlive2d("live2dcanvas" ,"/live2d/assets/z16/z16.model.json",0.5)</script>
+  
+</body>
+</html>

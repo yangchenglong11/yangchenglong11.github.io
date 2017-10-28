@@ -1,0 +1,252 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8" />
+  
+  <title>Golang 之sync.Pool | yangcl&#39;s</title>
+  <meta name="author" content="Yang Chenglong" />
+
+  
+  <meta name="description" content="Yangcl&#39;s Blog" />
+  
+
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+  <meta property="og:title" content="Golang 之sync.Pool" />
+  <meta property="og:site_name" content="yangcl&#39;s" />
+
+  
+  
+
+  
+    <meta property="og:image" content="" />
+  
+
+  
+  <link href="/css/images/favicon.ico" rel="icon" />
+  
+
+  <link rel="alternate" href="/atom.xml" title="yangcl&#39;s" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+
+
+  <!-- baidu webmaster push -->
+  <script src='//push.zhanzhang.baidu.com/push.js'></script>
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">yangcl&#39;s</a></h1>
+  <h2><a href="/">悟已往之不谏，知来者之可追。</a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+      <li><a href="/atom.xml">RSS</a></li>
+    
+      <li><a href="https://github.com/yangchenglong11">github</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2017-02-27T10:33:14.000Z"><a href="/2017/02/27/golang之sync-Pool/">2017-02-27</a></time>
+      
+      
+  
+    <h1 class="title">Golang 之sync.Pool</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>当多个goroutine都需要创建同一个对象的时候，如果goroutine过多，可能导致对象的创建数目剧增。 而对象又是占用内存的，进而导致的就是内存回收的GC压力徒增。造成“并发大－占用内存大－GC缓慢－处理并发能力降低－并发更大”这样的恶性循环。但如果每个goroutine不再自己单独创建对象，而是从对象池中获取出一个对象（如果池中已经有的话）。 这就是sync.Pool出现的目的了。</p>
+<a id="more"></a>
+<p>sync.Pool的使用非常简单，提供两个方法:Get和Put 和一个初始化回调函数New。<br>看下面这个例子(取自<a href="https://github.com/bradfitz/gomemcache/blob/master/memcache/selector.go" target="_blank" rel="external">gomemcache</a>)：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// keyBufPool returns []byte buffers for use by PickServer's call to</span></div><div class="line"><span class="comment">// crc32.ChecksumIEEE to avoid allocations. (but doesn't avoid the</span></div><div class="line"><span class="comment">// copies, which at least are bounded in size and small)</span></div><div class="line"><span class="keyword">var</span> keyBufPool = sync.Pool&#123;</div><div class="line">	New: <span class="function"><span class="keyword">func</span><span class="params">()</span> <span class="title">interface</span></span>&#123;&#125; &#123;</div><div class="line">		b := <span class="built_in">make</span>([]<span class="keyword">byte</span>, <span class="number">256</span>)</div><div class="line">		<span class="keyword">return</span> &amp;b</div><div class="line">	&#125;,</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="params">(ss *ServerList)</span> <span class="title">PickServer</span><span class="params">(key <span class="keyword">string</span>)</span> <span class="params">(net.Addr, error)</span></span> &#123;</div><div class="line">	ss.mu.RLock()</div><div class="line">	<span class="keyword">defer</span> ss.mu.RUnlock()</div><div class="line">	<span class="keyword">if</span> <span class="built_in">len</span>(ss.addrs) == <span class="number">0</span> &#123;</div><div class="line">		<span class="keyword">return</span> <span class="literal">nil</span>, ErrNoServers</div><div class="line">	&#125;</div><div class="line">	<span class="keyword">if</span> <span class="built_in">len</span>(ss.addrs) == <span class="number">1</span> &#123;</div><div class="line">		<span class="keyword">return</span> ss.addrs[<span class="number">0</span>], <span class="literal">nil</span></div><div class="line">	&#125;</div><div class="line">	bufp := keyBufPool.Get().(*[]<span class="keyword">byte</span>)</div><div class="line">	n := <span class="built_in">copy</span>(*bufp, key)</div><div class="line">	cs := crc32.ChecksumIEEE((*bufp)[:n])</div><div class="line">	keyBufPool.Put(bufp)</div><div class="line"></div><div class="line">	<span class="keyword">return</span> ss.addrs[cs%<span class="keyword">uint32</span>(<span class="built_in">len</span>(ss.addrs))], <span class="literal">nil</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>这是实际项目中的一个例子，这里使用keyBufPool的目的是为了让crc32.ChecksumIEEE所使用的[]bytes数组可以重复使用，减少GC的压力。</p>
+<p>但是这里可能会有一个问题，我们没有看到Pool的手动回收函数。 那么是不是就意味着，如果我们的并发量不断增加，这个Pool的体积会不断变大，或者一直维持在很大的范围内呢？</p>
+<p>答案是不会的，sync.Pool的回收是有的，它是在系统自动GC的时候，触发pool.go中的poolCleanup函数。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">poolCleanup</span><span class="params">()</span></span> &#123;</div><div class="line">	<span class="keyword">for</span> i, p := <span class="keyword">range</span> allPools &#123;</div><div class="line">		allPools[i] = <span class="literal">nil</span></div><div class="line">		<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; <span class="keyword">int</span>(p.localSize); i++ &#123;</div><div class="line">			l := indexLocal(p.local, i)</div><div class="line">			l.private = <span class="literal">nil</span></div><div class="line">			<span class="keyword">for</span> j := <span class="keyword">range</span> l.shared &#123;</div><div class="line">				l.shared[j] = <span class="literal">nil</span></div><div class="line">			&#125;</div><div class="line">			l.shared = <span class="literal">nil</span></div><div class="line">		&#125;</div><div class="line">		p.local = <span class="literal">nil</span></div><div class="line">		p.localSize = <span class="number">0</span></div><div class="line">	&#125;</div><div class="line">	allPools = []*Pool&#123;&#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>这个函数会把Pool中所有goroutine创建的对象都进行销毁。</p>
+<p>那这里另外一个问题也凸显出来了，很可能我上一步刚往pool中PUT一个对象之后，下一步GC触发，导致pool的GET函数获取不到PUT进去的对象。 这个时候，GET函数就会调用New函数，临时创建出一个对象，并存放到pool中。</p>
+<p>根据以上结论，sync.Pool其实不适合用来做持久保存的对象池（比如连接池）。它更适合用来做临时对象池，目的是为了降低GC的压力。</p>
+<p>连接池性能测试</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">package</span> memcache</div><div class="line"></div><div class="line"><span class="keyword">import</span> (</div><div class="line">	<span class="string">"sync"</span></div><div class="line">	<span class="string">"testing"</span></div><div class="line">)</div><div class="line"></div><div class="line"><span class="keyword">var</span> bytePool = sync.Pool&#123;</div><div class="line">	New: newPool,</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">newPool</span><span class="params">()</span> <span class="title">interface</span></span>&#123;&#125; &#123;</div><div class="line">	b := <span class="built_in">make</span>([]<span class="keyword">byte</span>, <span class="number">1024</span>)</div><div class="line">	<span class="keyword">return</span> &amp;b</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">BenchmarkAlloc</span><span class="params">(b *testing.B)</span></span> &#123;</div><div class="line">	<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; b.N; i++ &#123;</div><div class="line">		obj := <span class="built_in">make</span>([]<span class="keyword">byte</span>, <span class="number">1024</span>)</div><div class="line">		_ = obj</div><div class="line">	&#125;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">BenchmarkPool</span><span class="params">(b *testing.B)</span></span> &#123;</div><div class="line">	<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; b.N; i++ &#123;</div><div class="line">		obj := bytePool.Get().(*[]<span class="keyword">byte</span>)</div><div class="line">		_ = obj</div><div class="line">		bytePool.Put(obj)</div><div class="line">	&#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>文件目录下执行 go test -bench .</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">bogon:memcache yang$ <span class="keyword">go</span> test -bench .</div><div class="line">BenchmarkOnItem<span class="number">-4</span>              	 <span class="number">2000000</span>	       <span class="number">902</span> ns/op</div><div class="line">BenchmarkPickServer<span class="number">-4</span>          	<span class="number">10000000</span>	       <span class="number">147</span> ns/op	       <span class="number">0</span> B/op	       <span class="number">0</span> allocs/op</div><div class="line">BenchmarkPickServer_Single<span class="number">-4</span>   	<span class="number">20000000</span>	        <span class="number">69.4</span> ns/op	       <span class="number">0</span> B/op	       <span class="number">0</span> allocs/op</div><div class="line">BenchmarkAlloc<span class="number">-4</span>               	<span class="number">50000000</span>	        <span class="number">40.8</span> ns/op</div><div class="line">BenchmarkPool<span class="number">-4</span>                	<span class="number">50000000</span>	        <span class="number">27.8</span> ns/op</div><div class="line">PASS</div><div class="line">ok  	gomemcache/memcache	<span class="number">9.318s</span></div></pre></td></tr></table></figure>
+<p>通过性能测试可以清楚地看到，使用连接池消耗的CPU时间远远小于每次手动分配内存。</p>
+<p>源码分析：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div><div class="line">89</div><div class="line">90</div><div class="line">91</div><div class="line">92</div><div class="line">93</div><div class="line">94</div><div class="line">95</div><div class="line">96</div><div class="line">97</div><div class="line">98</div><div class="line">99</div><div class="line">100</div><div class="line">101</div><div class="line">102</div><div class="line">103</div><div class="line">104</div><div class="line">105</div><div class="line">106</div><div class="line">107</div><div class="line">108</div><div class="line">109</div><div class="line">110</div><div class="line">111</div><div class="line">112</div><div class="line">113</div><div class="line">114</div><div class="line">115</div><div class="line">116</div><div class="line">117</div><div class="line">118</div><div class="line">119</div><div class="line">120</div><div class="line">121</div><div class="line">122</div><div class="line">123</div><div class="line">124</div><div class="line">125</div><div class="line">126</div><div class="line">127</div><div class="line">128</div><div class="line">129</div><div class="line">130</div><div class="line">131</div><div class="line">132</div><div class="line">133</div><div class="line">134</div><div class="line">135</div><div class="line">136</div><div class="line">137</div><div class="line">138</div><div class="line">139</div><div class="line">140</div><div class="line">141</div><div class="line">142</div><div class="line">143</div><div class="line">144</div><div class="line">145</div><div class="line">146</div><div class="line">147</div><div class="line">148</div><div class="line">149</div><div class="line">150</div><div class="line">151</div><div class="line">152</div><div class="line">153</div><div class="line">154</div><div class="line">155</div><div class="line">156</div><div class="line">157</div><div class="line">158</div><div class="line">159</div><div class="line">160</div><div class="line">161</div><div class="line">162</div><div class="line">163</div><div class="line">164</div><div class="line">165</div><div class="line">166</div><div class="line">167</div><div class="line">168</div><div class="line">169</div><div class="line">170</div><div class="line">171</div><div class="line">172</div><div class="line">173</div><div class="line">174</div><div class="line">175</div><div class="line">176</div><div class="line">177</div><div class="line">178</div><div class="line">179</div><div class="line">180</div><div class="line">181</div><div class="line">182</div><div class="line">183</div><div class="line">184</div><div class="line">185</div><div class="line">186</div><div class="line">187</div><div class="line">188</div><div class="line">189</div><div class="line">190</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">type</span> Pool <span class="keyword">struct</span> &#123;</div><div class="line">	noCopy noCopy</div><div class="line"></div><div class="line">	local     unsafe.Pointer</div><div class="line">	localSize <span class="keyword">uintptr</span></div><div class="line">    <span class="comment">//当pool中无可用对象时，调用New函数产生对象值直接返回给调用方，所以其产生的对象值永远不会被放置到池中</span></div><div class="line">	New <span class="function"><span class="keyword">func</span><span class="params">()</span> <span class="title">interface</span></span>&#123;&#125;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">//sync.pool为每个P（golang的调度模型介绍中有介绍）都分配了一个子池。</span></div><div class="line"><span class="comment">//每个子池里面有一个私有对象和共享列表对象，私有对象是只有对应的P能够访问，</span></div><div class="line"><span class="comment">//因为一个P同一时间只能执行一个goroutine，因此对私有对象存取操作是不需要加锁的。</span></div><div class="line"><span class="comment">//共享列表是和其他P分享的，因此操作共享列表是需要加锁的。</span></div><div class="line"><span class="keyword">type</span> poolLocal <span class="keyword">struct</span> &#123;</div><div class="line">	private <span class="keyword">interface</span>&#123;&#125;</div><div class="line">	shared  []<span class="keyword">interface</span>&#123;&#125;</div><div class="line">	Mutex</div><div class="line">	pad     [<span class="number">128</span>]<span class="keyword">byte</span></div><div class="line">&#125;</div><div class="line"></div><div class="line"></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">fastrand</span><span class="params">()</span> <span class="title">uint32</span></span></div><div class="line"><span class="function"></span></div><div class="line"><span class="function"><span class="title">var</span> <span class="title">poolRaceHash</span> [128]<span class="title">uint64</span></span></div><div class="line"><span class="function"></span></div><div class="line"><span class="function"><span class="title">func</span> <span class="title">poolRaceAddr</span><span class="params">(x <span class="keyword">interface</span>&#123;&#125;)</span> <span class="title">unsafe</span>.<span class="title">Pointer</span></span> &#123;</div><div class="line">	ptr := <span class="keyword">uintptr</span>((*[<span class="number">2</span>]unsafe.Pointer)(unsafe.Pointer(&amp;x))[<span class="number">1</span>])</div><div class="line">	h := <span class="keyword">uint32</span>((<span class="keyword">uint64</span>(<span class="keyword">uint32</span>(ptr)) * <span class="number">0x85ebca6b</span>) &gt;&gt; <span class="number">16</span>)</div><div class="line">	<span class="keyword">return</span> unsafe.Pointer(&amp;poolRaceHash[h%<span class="keyword">uint32</span>(<span class="built_in">len</span>(poolRaceHash))])</div><div class="line">&#125;</div><div class="line"></div><div class="line"></div><div class="line"><span class="comment">//固定到某个P，如果私有对象为空则放到私有对象；</span></div><div class="line"><span class="comment">//否则加入到该P子池的共享列表中（需要加锁）。</span></div><div class="line"><span class="comment">//可以看到一次put操作最少0次加锁，最多1次加锁。</span></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="params">(p *Pool)</span> <span class="title">Put</span><span class="params">(x <span class="keyword">interface</span>&#123;&#125;)</span></span> &#123;</div><div class="line">	<span class="keyword">if</span> x == <span class="literal">nil</span> &#123;</div><div class="line">		<span class="keyword">return</span></div><div class="line">	&#125;</div><div class="line">	<span class="keyword">if</span> race.Enabled &#123;</div><div class="line">		<span class="keyword">if</span> fastrand()%<span class="number">4</span> == <span class="number">0</span> &#123;</div><div class="line">			<span class="keyword">return</span></div><div class="line">		&#125;</div><div class="line">		race.ReleaseMerge(poolRaceAddr(x))</div><div class="line">		race.Disable()</div><div class="line">	&#125;</div><div class="line">	l := p.pin()</div><div class="line">	<span class="keyword">if</span> l.private == <span class="literal">nil</span> &#123;</div><div class="line">		l.private = x</div><div class="line">		x = <span class="literal">nil</span></div><div class="line">	&#125;</div><div class="line">	runtime_procUnpin()</div><div class="line">	<span class="keyword">if</span> x != <span class="literal">nil</span> &#123;</div><div class="line">		l.Lock()</div><div class="line">		l.shared = <span class="built_in">append</span>(l.shared, x)</div><div class="line">		l.Unlock()</div><div class="line">	&#125;</div><div class="line">	<span class="keyword">if</span> race.Enabled &#123;</div><div class="line">		race.Enable()</div><div class="line">	&#125;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">//固定到某个P，尝试从私有对象获取，如果私有对象非空则返回该对象，并把私有对象置空；</span></div><div class="line"><span class="comment">//如果私有对象是空的时候，就去当前子池的共享列表获取（需要加锁）；</span></div><div class="line"><span class="comment">//如果当前子池的共享列表也是空的，那么就尝试去其他P的子池的共享列表偷取一个（需要加锁）；</span></div><div class="line"><span class="comment">//如果其他子池都是空的，最后就用用户指定的New函数产生一个新的对象返回。</span></div><div class="line"><span class="comment">//可以看到一次get操作最少0次加锁，最大N（N等于MAXPROCS）次加锁。</span></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="params">(p *Pool)</span> <span class="title">Get</span><span class="params">()</span> <span class="title">interface</span></span>&#123;&#125; &#123;</div><div class="line">	<span class="keyword">if</span> race.Enabled &#123;</div><div class="line">		race.Disable()</div><div class="line">	&#125;</div><div class="line">	l := p.pin()</div><div class="line">	x := l.private</div><div class="line">	l.private = <span class="literal">nil</span></div><div class="line">	runtime_procUnpin()</div><div class="line">	<span class="keyword">if</span> x == <span class="literal">nil</span> &#123;</div><div class="line">		l.Lock()</div><div class="line">		last := <span class="built_in">len</span>(l.shared) - <span class="number">1</span></div><div class="line">		<span class="keyword">if</span> last &gt;= <span class="number">0</span> &#123;</div><div class="line">			x = l.shared[last]</div><div class="line">			l.shared = l.shared[:last]</div><div class="line">		&#125;</div><div class="line">		l.Unlock()</div><div class="line">		<span class="keyword">if</span> x == <span class="literal">nil</span> &#123;</div><div class="line">			x = p.getSlow()</div><div class="line">		&#125;</div><div class="line">	&#125;</div><div class="line">	<span class="keyword">if</span> race.Enabled &#123;</div><div class="line">		race.Enable()</div><div class="line">		<span class="keyword">if</span> x != <span class="literal">nil</span> &#123;</div><div class="line">			race.Acquire(poolRaceAddr(x))</div><div class="line">		&#125;</div><div class="line">	&#125;</div><div class="line">	<span class="keyword">if</span> x == <span class="literal">nil</span> &amp;&amp; p.New != <span class="literal">nil</span> &#123;</div><div class="line">		x = p.New()</div><div class="line">	&#125;</div><div class="line">	<span class="keyword">return</span> x</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="params">(p *Pool)</span> <span class="title">getSlow</span><span class="params">()</span> <span class="params">(x <span class="keyword">interface</span>&#123;&#125;)</span></span> &#123;</div><div class="line">	size := atomic.LoadUintptr(&amp;p.localSize)</div><div class="line">	local := p.local</div><div class="line"></div><div class="line">	pid := runtime_procPin()</div><div class="line">	runtime_procUnpin()</div><div class="line">	<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; <span class="keyword">int</span>(size); i++ &#123;</div><div class="line">		l := indexLocal(local, (pid+i+<span class="number">1</span>)%<span class="keyword">int</span>(size))</div><div class="line">		l.Lock()</div><div class="line">		last := <span class="built_in">len</span>(l.shared) - <span class="number">1</span></div><div class="line">		<span class="keyword">if</span> last &gt;= <span class="number">0</span> &#123;</div><div class="line">			x = l.shared[last]</div><div class="line">			l.shared = l.shared[:last]</div><div class="line">			l.Unlock()</div><div class="line">			<span class="keyword">break</span></div><div class="line">		&#125;</div><div class="line">		l.Unlock()</div><div class="line">	&#125;</div><div class="line">	<span class="keyword">return</span> x</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="params">(p *Pool)</span> <span class="title">pin</span><span class="params">()</span> *<span class="title">poolLocal</span></span> &#123;</div><div class="line">	pid := runtime_procPin()</div><div class="line"></div><div class="line">	s := atomic.LoadUintptr(&amp;p.localSize)</div><div class="line">	l := p.local</div><div class="line">	<span class="keyword">if</span> <span class="keyword">uintptr</span>(pid) &lt; s &#123;</div><div class="line">		<span class="keyword">return</span> indexLocal(l, pid)</div><div class="line">	&#125;</div><div class="line">	<span class="keyword">return</span> p.pinSlow()</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="params">(p *Pool)</span> <span class="title">pinSlow</span><span class="params">()</span> *<span class="title">poolLocal</span></span> &#123;</div><div class="line">	runtime_procUnpin()</div><div class="line">	allPoolsMu.Lock()</div><div class="line">	<span class="keyword">defer</span> allPoolsMu.Unlock()</div><div class="line">	pid := runtime_procPin()</div><div class="line"></div><div class="line">	s := p.localSize</div><div class="line">	l := p.local</div><div class="line">	<span class="keyword">if</span> <span class="keyword">uintptr</span>(pid) &lt; s &#123;</div><div class="line">		<span class="keyword">return</span> indexLocal(l, pid)</div><div class="line">	&#125;</div><div class="line">	<span class="keyword">if</span> p.local == <span class="literal">nil</span> &#123;</div><div class="line">		allPools = <span class="built_in">append</span>(allPools, p)</div><div class="line">	&#125;</div><div class="line"></div><div class="line">	size := runtime.GOMAXPROCS(<span class="number">0</span>)</div><div class="line">	local := <span class="built_in">make</span>([]poolLocal, size)</div><div class="line">	atomic.StorePointer(&amp;p.local, unsafe.Pointer(&amp;local[<span class="number">0</span>]))</div><div class="line">	atomic.StoreUintptr(&amp;p.localSize, <span class="keyword">uintptr</span>(size))</div><div class="line">	<span class="keyword">return</span> &amp;local[pid]</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">//在系统自动GC的时候，触发pool.go中的poolCleanup函数,把Pool中所有goroutine创建的对象都进行销毁</span></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">poolCleanup</span><span class="params">()</span></span> &#123;</div><div class="line">	<span class="keyword">for</span> i, p := <span class="keyword">range</span> allPools &#123;</div><div class="line">		allPools[i] = <span class="literal">nil</span></div><div class="line">		<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; <span class="keyword">int</span>(p.localSize); i++ &#123;</div><div class="line">			l := indexLocal(p.local, i)</div><div class="line">			l.private = <span class="literal">nil</span></div><div class="line">			<span class="keyword">for</span> j := <span class="keyword">range</span> l.shared &#123;</div><div class="line">				l.shared[j] = <span class="literal">nil</span></div><div class="line">			&#125;</div><div class="line">			l.shared = <span class="literal">nil</span></div><div class="line">		&#125;</div><div class="line">		p.local = <span class="literal">nil</span></div><div class="line">		p.localSize = <span class="number">0</span></div><div class="line">	&#125;</div><div class="line">	allPools = []*Pool&#123;&#125;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="keyword">var</span> (</div><div class="line">	allPoolsMu Mutex</div><div class="line">	allPools   []*Pool</div><div class="line">)</div><div class="line"></div><div class="line"><span class="comment">//在init中注册了一个poolCleanup函数，</span></div><div class="line"><span class="comment">//它会清除所有的pool里面的所有缓存的对象，该函数注册进去之后会在每次gc之前都会调用</span></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">init</span><span class="params">()</span></span> &#123;</div><div class="line">	runtime_registerPoolCleanup(poolCleanup)</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">indexLocal</span><span class="params">(l unsafe.Pointer, i <span class="keyword">int</span>)</span> *<span class="title">poolLocal</span></span> &#123;</div><div class="line">	<span class="keyword">return</span> &amp;(*[<span class="number">1000000</span>]poolLocal)(l)[i]</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">// Implemented in runtime.</span></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">runtime_registerPoolCleanup</span><span class="params">(cleanup <span class="keyword">func</span>()</span>)</span></div><div class="line"><span class="function"><span class="title">func</span> <span class="title">runtime_procPin</span><span class="params">()</span> <span class="title">int</span></span></div><div class="line"><span class="function"><span class="title">func</span> <span class="title">runtime_procUnpin</span><span class="params">()</span></span></div></pre></td></tr></table></figure>
+<p>示例：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">package</span> main</div><div class="line"></div><div class="line"><span class="keyword">import</span> (</div><div class="line">	<span class="string">"fmt"</span></div><div class="line">	<span class="string">"runtime"</span></div><div class="line">	<span class="string">"runtime/debug"</span></div><div class="line">	<span class="string">"sync"</span></div><div class="line">	<span class="string">"sync/atomic"</span></div><div class="line">)</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</div><div class="line">	<span class="comment">// 禁用GC，并保证在main函数执行结束前恢复GC</span></div><div class="line">	<span class="keyword">defer</span> debug.SetGCPercent(debug.SetGCPercent(<span class="number">-1</span>))</div><div class="line">	<span class="keyword">var</span> count <span class="keyword">int32</span></div><div class="line">	newFunc := <span class="function"><span class="keyword">func</span><span class="params">()</span> <span class="title">interface</span></span>&#123;&#125; &#123;</div><div class="line">		<span class="keyword">return</span> atomic.AddInt32(&amp;count, <span class="number">1</span>)</div><div class="line">	&#125;</div><div class="line"></div><div class="line">	pool := sync.Pool&#123;New: newFunc&#125;</div><div class="line"></div><div class="line">	<span class="comment">// New 字段值的作用</span></div><div class="line">	v1 := pool.Get()</div><div class="line">	fmt.Printf(<span class="string">"v1: %v\n"</span>, v1)</div><div class="line"></div><div class="line">	<span class="comment">// 临时对象池的存取</span></div><div class="line">	pool.Put(newFunc())</div><div class="line">	pool.Put(newFunc())</div><div class="line">	pool.Put(newFunc())</div><div class="line">	v2 := pool.Get()</div><div class="line">	fmt.Printf(<span class="string">"v2: %v\n"</span>, v2)</div><div class="line"></div><div class="line">	<span class="comment">// 垃圾回收对临时对象池的影响</span></div><div class="line">	debug.SetGCPercent(<span class="number">100</span>)</div><div class="line">	runtime.GC()</div><div class="line">	v3 := pool.Get()</div><div class="line">	fmt.Printf(<span class="string">"v3: %v\n"</span>, v3)</div><div class="line">	pool.New = <span class="literal">nil</span></div><div class="line">	v4 := pool.Get()</div><div class="line">	fmt.Printf(<span class="string">"v4: %v\n"</span>, v4)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+
+      
+    </div>
+    
+    <footer>
+        <div class="alignright">
+          
+          <a href='javascript:void(0)' class="share-link bdsharebuttonbox" data-cmd="more">分享</a>
+        </div>
+        
+  
+  <div class="categories">
+    <a href="/categories/Golang/">Golang</a>
+  </div>
+
+        
+  
+  <div class="tags">
+    <a href="/tags/Golang/">Golang</a>
+  </div>
+
+        <!-- partial('post/share') -->
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="搜索">
+    <input type="hidden" name="q" value="site:yangchenglong11.github.io">
+  </form>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">分类</h3>
+  <ul class="entry">
+  
+    <li><a href="/categories/Docker/">Docker</a><small>1</small></li>
+  
+    <li><a href="/categories/Golang/">Golang</a><small>11</small></li>
+  
+    <li><a href="/categories/Linux/">Linux</a><small>4</small></li>
+  
+    <li><a href="/categories/MongoDB/">MongoDB</a><small>4</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">最新文章</h3>
+  <ul class="entry">
+    
+      <li>
+        <a href="/2017/04/23/docker搭建mongoDB分片集群/">Docker 搭建 MongoDB 分片集群</a>
+      </li>
+    
+      <li>
+        <a href="/2017/04/11/Linux-的I-O-模型/">Linux 的I/O 模型</a>
+      </li>
+    
+      <li>
+        <a href="/2017/04/03/mgo-断线重连/">mgo 断线重连</a>
+      </li>
+    
+      <li>
+        <a href="/2017/03/17/Mongodb数据导出-导入/">Mongodb 数据导出/导入</a>
+      </li>
+    
+      <li>
+        <a href="/2017/03/05/谈shell之信号捕捉及处理/">谈shell之信号捕捉及处理</a>
+      </li>
+    
+  </ul>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">标签</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/Docker/">Docker</a><small>1</small></li>
+  
+    <li><a href="/tags/Golang/">Golang</a><small>12</small></li>
+  
+    <li><a href="/tags/Linux/">Linux</a><small>4</small></li>
+  
+    <li><a href="/tags/MongoDB/">MongoDB</a><small>4</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tagcloud">
+  <h3 class="title">标签云</h3>
+  <div class="entry">
+    <a href="/tags/Docker/" style="font-size: 10px;">Docker</a> <a href="/tags/Golang/" style="font-size: 20px;">Golang</a> <a href="/tags/Linux/" style="font-size: 15px;">Linux</a> <a href="/tags/MongoDB/" style="font-size: 15px;">MongoDB</a>
+  </div>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  <p>
+  
+  &copy; 2017 Yang Chenglong
+  
+  All rights reserved.</p>
+  <p>Powered by <a href="http://hexo.io/" target="_blank">Hexo</a></p>
+</div>
+<div class="clearfix"></div>
+
+<script>window._bd_share_config={"common":{"bdSnsKey":{},"bdText":"","bdMini":"1","bdMiniList":false,"bdPic":"","bdStyle":"2","bdSize":"16"},"share":{}};with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='http://bdimg.share.baidu.com/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];</script></footer>
+  <script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+
+<div id='bg'></div>
+  
+    <script type="text/javascript" src="/live2d/script.js"></script>
+    <canvas id="live2dcanvas" width="150" height="300" class="live2d"></canvas>
+    <style>
+      #live2dcanvas {
+        position: fixed;
+        right: 0px;
+        z-index: 999;
+        pointer-events: none;
+        bottom: -20px;
+      }
+    </style>
+    <script>loadlive2d("live2dcanvas" ,"/live2d/assets/z16/z16.model.json",0.5)</script>
+  
+</body>
+</html>
