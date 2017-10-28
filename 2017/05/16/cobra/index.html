@@ -1,0 +1,297 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8" />
+  
+  <title>cobra | yangcl&#39;s</title>
+  <meta name="author" content="Yang Chenglong" />
+
+  
+  <meta name="description" content="Yangcl&#39;s Blog" />
+  
+
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+  <meta property="og:title" content="cobra" />
+  <meta property="og:site_name" content="yangcl&#39;s" />
+
+  
+  
+
+  
+    <meta property="og:image" content="" />
+  
+
+  
+  <link href="/css/images/favicon.ico" rel="icon" />
+  
+
+  <link rel="alternate" href="/atom.xml" title="yangcl&#39;s" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+
+
+  <!-- baidu webmaster push -->
+  <script src='//push.zhanzhang.baidu.com/push.js'></script>
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">yangcl&#39;s</a></h1>
+  <h2><a href="/">悟已往之不谏，知来者之可追。</a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+      <li><a href="/atom.xml">RSS</a></li>
+    
+      <li><a href="https://github.com/yangchenglong11">github</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2017-05-16T10:14:34.000Z"><a href="/2017/05/16/cobra/">2017-05-16</a></time>
+      
+      
+  
+    <h1 class="title">cobra</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>cobra是一个命令行框架, 它可以生成和解析命令行。 Cobra具有非常干净的界面和简单的设计，而不需要不必要的构造函数或初始化方法。</p>
+<a id="more"></a>
+<p>用Cobra命令构建的应用程序被设计成尽可能方便用户使用。可以在命令之前或之后放置flag。可以使用短的和长的flag。命令甚至不需要完全键入，help是自动生成的，它是应用程序使用help命令或–help flag时调用的特定命令.</p>
+<h3 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h3><p>Cobra是建立在命令、参数结构之上的。</p>
+<p>Commands代表行动，Args是事物，Flags表示对行为的修饰。</p>
+<p>比较好的应用程序使用起来就像句子一样。用户将知道如何使用应用程序因为他们本来就知道如何使用它。</p>
+<p>一般模式就像下面一样：</p>
+<figure class="highlight brainfuck"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="comment">VERB</span> <span class="comment">NOUN</span> <span class="literal">-</span><span class="literal">-</span><span class="comment">ADJECTIVE</span><span class="string">.</span> <span class="comment">or</span> <span class="comment">APPNAME</span> <span class="comment">COMMAND</span> <span class="comment">ARG</span> <span class="literal">-</span><span class="literal">-</span><span class="comment">FLAG</span></div></pre></td></tr></table></figure>
+<p>一些好的现实世界的例子可以更好地说明这一点。</p>
+<p>在下面的例子中，server 是一个命令， port是一个参数</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">hugo server --port=1313</div></pre></td></tr></table></figure>
+<h3 id="Commands"><a href="#Commands" class="headerlink" title="Commands"></a>Commands</h3><p>命令是应用程序的中心点。应用程序支持的每个交互都将包含在命令中。命令可以拥有子命令并且可选地运行操作。</p>
+<p>命令具有以下结构：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">type</span> Command <span class="keyword">struct</span> &#123;</div><div class="line">    Use <span class="keyword">string</span> <span class="comment">// The one-line usage message.</span></div><div class="line">    Short <span class="keyword">string</span> <span class="comment">// The short description shown in the 'help' output.</span></div><div class="line">    Long <span class="keyword">string</span> <span class="comment">// The long message shown in the 'help &lt;this-command&gt;' output.</span></div><div class="line">    Run <span class="function"><span class="keyword">func</span><span class="params">(cmd *Command, args []<span class="keyword">string</span>)</span> // <span class="title">Run</span> <span class="title">runs</span> <span class="title">the</span> <span class="title">command</span>.</span></div><div class="line"><span class="function">&#125;</span></div></pre></td></tr></table></figure>
+<h3 id="flags"><a href="#flags" class="headerlink" title="flags"></a>flags</h3><p>flags是修改命令行为的一种方式。Cobra完全兼容POSIX命令行模式以及flags。</p>
+<p>flag的功能由pflag库提供，它是flag标准库的一个fork，保持相同的接口的同时兼容POSIX标准。</p>
+<h3 id="使用"><a href="#使用" class="headerlink" title="使用"></a>使用</h3><p>Cobra的工作原理是创建一组命令，然后将它们组织成一棵树。命令树树定义应用程序的结构。</p>
+<p>一旦每个命令都定义了相应的flag，那么树将被分配给最终执行的command。</p>
+<h3 id="Cobra提供的功能"><a href="#Cobra提供的功能" class="headerlink" title="Cobra提供的功能"></a>Cobra提供的功能</h3><ul>
+<li>简易的子命令行模式，如 app server， app fetch等等</li>
+<li>完全兼容posix命令行模式</li>
+<li>嵌套子命令subcommand</li>
+<li>支持全局，局部，串联flags</li>
+<li>使用Cobra很容易的生成应用程序和命令，使用cobra create appname和cobra add cmdname</li>
+<li>如果命令输入错误，将提供智能建议，如 app srver，将提示srver没有，是否是app server</li>
+<li>自动生成commands和flags的帮助信息</li>
+<li>自动生成详细的help信息，如app help</li>
+<li>自动识别-h，–help帮助flag</li>
+<li>自动生成应用程序在bash下命令自动完成功能</li>
+<li>自动生成应用程序的man手册</li>
+<li>命令行别名</li>
+<li>自定义help和usage信息</li>
+<li>可选的紧密集成的<a href="http://www.ctolib.com/http://github.com/spf13/viper" target="_blank" rel="external">viper</a> apps</li>
+</ul>
+<h3 id="如何使用"><a href="#如何使用" class="headerlink" title="如何使用"></a>如何使用</h3><p>下面简单介绍一下如何使用Cobra，基本能够满足一般命令行程序的需求，如果需要更多功能，可以研究一下源码<a href="http://www.ctolib.com/https://github.com/spf13/cobra" target="_blank" rel="external">github</a>。</p>
+<h2 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h2><p>cobra的源工程地址在github.com/spf13/cobra/cobra, 同其他Go开源项目一样,我们通过go get来拉取:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ <span class="keyword">go</span> get -u github.com/spf13/cobra/cobra</div></pre></td></tr></table></figure>
+<p>安装完成后，打开GOPATH目录，bin目录下应该有已经编译好的cobra或cobra.exe程序，当然你也可以使用源代码自己生成一个最新的cobra程序。</p>
+<p>通过下面语句import到工程:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">import</span> <span class="string">"github.com/spf13/cobra"</span></div></pre></td></tr></table></figure>
+<h2 id="通过cobra命令生成工程"><a href="#通过cobra命令生成工程" class="headerlink" title="通过cobra命令生成工程"></a>通过cobra命令生成工程</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span><span class="bash"> cobra init cobra-demo</span></div><div class="line">Your Cobra application is ready at</div><div class="line">/Users/yang/lib/go/src/cobra-demo</div><div class="line">Give it a try by going there and running `go run main.go`</div><div class="line">Add commands to it by running `cobra add [cmdname]`</div></pre></td></tr></table></figure>
+<p>生成后的工程目录结构如下:</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span><span class="bash"> tree cobra-demo</span></div><div class="line">cobra-demo</div><div class="line">├── LICENSE</div><div class="line">├── cmd</div><div class="line">│   └── root.go</div><div class="line">└── main.go</div></pre></td></tr></table></figure>
+<p>cobra生成的工程, 默认文件都放在cmd目录下, 以root.go作为根命令. cobra可以嵌套<a href="https://github.com/ShevYan/GoTutor/blob/master/flag-demo" target="_blank" rel="external">flag</a>, <a href="https://github.com/ShevYan/GoTutor/blob/master/pflag-demo" target="_blank" rel="external">pflag</a>, <a href="https://github.com/ShevYan/GoTutor/blob/master/viper-demo" target="_blank" rel="external">viper</a>一起使用. 其中init()里面调用了initConfig(), 并可以调用pflag:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">init</span><span class="params">()</span></span> &#123;</div><div class="line">	cobra.OnInitialize(initConfig)</div><div class="line"></div><div class="line">	<span class="comment">// Here you will define your flags and configuration settings.</span></div><div class="line">	<span class="comment">// Cobra supports Persistent Flags, which, if defined here,</span></div><div class="line">	<span class="comment">// will be global for your application.</span></div><div class="line"></div><div class="line">	RootCmd.PersistentFlags().StringVar(&amp;cfgFile, <span class="string">"config"</span>, <span class="string">""</span>, <span class="string">"config file (default is $HOME/.cobra-demo.yaml)"</span>)</div><div class="line">	<span class="comment">// Cobra also supports local flags, which will only run</span></div><div class="line">	<span class="comment">// when this action is called directly.</span></div><div class="line">	RootCmd.Flags().BoolP(<span class="string">"toggle"</span>, <span class="string">"t"</span>, <span class="literal">false</span>, <span class="string">"Help message for toggle"</span>)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>flag的操作中, 分为全局的flag和当前子命令的flag. 什么是子命令呢? cobra支持多级子命令, 比如: mycmd sub1 sub2, 其中mycmd是根命令, sub1是mycmd的子命令, sub2是sub1的子命令. 因此, RootCmd.PersistentFlags()是一个全局flag, RootCmd.Flags()是当前命令的flag. 由于是根命令,其实二者是相同的, 但是如果在子命令中, 二者是不同的.</p>
+<p>下面是使用viper的地方:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// initConfig reads in config file and ENV variables if set.</span></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">initConfig</span><span class="params">()</span></span> &#123;</div><div class="line">	<span class="keyword">if</span> cfgFile != <span class="string">""</span> &#123; <span class="comment">// enable ability to specify config file via flag</span></div><div class="line">		viper.SetConfigFile(cfgFile)</div><div class="line">	&#125;</div><div class="line"></div><div class="line">	viper.SetConfigName(<span class="string">".cobra-demo"</span>) <span class="comment">// name of config file (without extension)</span></div><div class="line">	viper.AddConfigPath(<span class="string">"$HOME"</span>)  <span class="comment">// adding home directory as first search path</span></div><div class="line">	viper.AutomaticEnv()          <span class="comment">// read in environment variables that match</span></div><div class="line"></div><div class="line">	<span class="comment">// If a config file is found, read it in.</span></div><div class="line">	<span class="keyword">if</span> err := viper.ReadInConfig(); err == <span class="literal">nil</span> &#123;</div><div class="line">		fmt.Println(<span class="string">"Using config file:"</span>, viper.ConfigFileUsed())</div><div class="line">	&#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>cobra对象初始化:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// This represents the base command when called without any subcommands</span></div><div class="line"><span class="keyword">var</span> RootCmd = &amp;cobra.Command&#123;</div><div class="line">	Use:   <span class="string">"cobra-demo"</span>,</div><div class="line">	Short: <span class="string">"A brief description of your application"</span>,</div><div class="line">	Long: <span class="string">`A longer description that spans multiple lines and likely contains</span></div><div class="line"><span class="string">demos and usage of using your application. For demo:</span></div><div class="line"><span class="string"></span></div><div class="line"><span class="string">Cobra is a CLI library for Go that empowers applications.</span></div><div class="line"><span class="string">This application is a tool to generate the needed files</span></div><div class="line"><span class="string">to quickly create a Cobra application.`</span>,</div><div class="line"><span class="comment">// Uncomment the following line if your bare application</span></div><div class="line"><span class="comment">// has an action associated with it:</span></div><div class="line">	Run: <span class="function"><span class="keyword">func</span><span class="params">(cmd *cobra.Command, args []<span class="keyword">string</span>)</span></span> &#123; &#125;,</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>上面这个对象就是cobra的根命令对象, 默认生成的时候Run字段是被注释的, 打开以后就可以在函数里面写入自己的处理函数. 下面是运行结果:</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span><span class="bash"> go run main.go -h</span></div><div class="line">A longer description that spans multiple lines and likely contains</div><div class="line">demos and usage of using your application. For demo:</div><div class="line"></div><div class="line">Cobra is a CLI library for Go that empowers applications.</div><div class="line">This application is a tool to generate the needed files</div><div class="line">to quickly create a Cobra application.</div><div class="line"></div><div class="line">Usage:</div><div class="line">  cobra-demo [flags]</div><div class="line"></div><div class="line">Flags:</div><div class="line">      --config="": config file (default is $HOME/.cobra-demo.yaml)</div><div class="line">  -t, --toggle[=false]: Help message for toggle</div></pre></td></tr></table></figure>
+<p>执行下列命令, 生成子命令:</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">cobra add serve</div><div class="line">cobra add config</div><div class="line">cobra add create -p 'configCmd'</div></pre></td></tr></table></figure>
+<p>之后,工程结构变为:</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span><span class="bash"> tree cobra-demo</span></div><div class="line">cobra-demo</div><div class="line">├── LICENSE</div><div class="line">├── cmd</div><div class="line">│   ├── config.go</div><div class="line">│   ├── create.go</div><div class="line">│   ├── root.go</div><div class="line">│   └── serve.go</div><div class="line">└──  main.go</div><div class="line"></div><div class="line">1 directory, 8 files</div></pre></td></tr></table></figure>
+<p>通过上述命令,我们生成了3个子命令, config, serve, create:</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span><span class="bash"> go run main.go -h</span></div><div class="line">A longer description that spans multiple lines and likely contains</div><div class="line">demos and usage of using your application. For demo:</div><div class="line"></div><div class="line">Cobra is a CLI library for Go that empowers applications.</div><div class="line">This application is a tool to generate the needed files</div><div class="line">to quickly create a Cobra application.</div><div class="line"></div><div class="line">Usage:</div><div class="line">  cobra-demo [flags]</div><div class="line">  cobra-demo [command]</div><div class="line"></div><div class="line">Available Commands:</div><div class="line">  config      A brief description of your command</div><div class="line">  serve       A brief description of your command</div><div class="line"></div><div class="line">Flags:</div><div class="line">      --config="": config file (default is $HOME/.cobra-demo.yaml)</div><div class="line">  -t, --toggle[=false]: Help message for toggle</div></pre></td></tr></table></figure>
+<p>执行config子命令</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">$ <span class="keyword">go</span> run main.<span class="keyword">go</span> config</div><div class="line">config called</div></pre></td></tr></table></figure>
+<p>执行config的create子命令</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">$ <span class="keyword">go</span> run main.<span class="keyword">go</span> config create</div><div class="line">create called</div></pre></td></tr></table></figure>
+<p>我们可以看到代码里面config是作为根命令的子命令:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">init</span><span class="params">()</span></span> &#123;</div><div class="line">	RootCmd.AddCommand(configCmd)</div><div class="line"></div><div class="line">	<span class="comment">// Here you will define your flags and configuration settings.</span></div><div class="line"></div><div class="line">	<span class="comment">// Cobra supports Persistent Flags which will work for this command</span></div><div class="line">	<span class="comment">// and all subcommands, e.g.:</span></div><div class="line">	configCmd.PersistentFlags().String(<span class="string">"foo"</span>, <span class="string">""</span>, <span class="string">"A help for foo"</span>)</div><div class="line"></div><div class="line">	<span class="comment">// Cobra supports local flags which will only run when this command</span></div><div class="line">	<span class="comment">// is called directly, e.g.:</span></div><div class="line">	configCmd.Flags().BoolP(<span class="string">"toggle"</span>, <span class="string">"t"</span>, <span class="literal">false</span>, <span class="string">"Help message for toggle"</span>)</div><div class="line"></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>当我们输入错误时，会有相应提示</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line">$ <span class="keyword">go</span> run main.<span class="keyword">go</span> serv   </div><div class="line">Error: unknown command <span class="string">"serv"</span> <span class="keyword">for</span> <span class="string">"cobra-demo"</span></div><div class="line"></div><div class="line">Did you mean this?</div><div class="line">        serve</div><div class="line"></div><div class="line">Run <span class="string">'cobra-demo --help'</span> <span class="keyword">for</span> usage.</div><div class="line">unknown command <span class="string">"serv"</span> <span class="keyword">for</span> <span class="string">"cobra-demo"</span></div><div class="line"></div><div class="line">Did you mean this?</div><div class="line">        serve</div><div class="line"></div><div class="line">exit status <span class="number">1</span></div></pre></td></tr></table></figure>
+      
+    </div>
+    
+    <footer>
+        <div class="alignright">
+          
+          <a href='javascript:void(0)' class="share-link bdsharebuttonbox" data-cmd="more">分享</a>
+        </div>
+        
+  
+  <div class="categories">
+    <a href="/categories/Golang/">Golang</a>
+  </div>
+
+        
+  
+  <div class="tags">
+    <a href="/tags/Golang/">Golang</a>
+  </div>
+
+        <!-- partial('post/share') -->
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="搜索">
+    <input type="hidden" name="q" value="site:yangchenglong11.github.io">
+  </form>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">分类</h3>
+  <ul class="entry">
+  
+    <li><a href="/categories/Docker/">Docker</a><small>1</small></li>
+  
+    <li><a href="/categories/Golang/">Golang</a><small>14</small></li>
+  
+    <li><a href="/categories/Linux/">Linux</a><small>4</small></li>
+  
+    <li><a href="/categories/MongoDB/">MongoDB</a><small>4</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">最新文章</h3>
+  <ul class="entry">
+    
+      <li>
+        <a href="/2017/05/26/channel示例之GoTocket/">channel示例之GoTocket</a>
+      </li>
+    
+      <li>
+        <a href="/2017/05/16/cobra/">cobra</a>
+      </li>
+    
+      <li>
+        <a href="/2017/05/04/bufio/">bufio 源码解读</a>
+      </li>
+    
+      <li>
+        <a href="/2017/04/23/docker搭建mongoDB分片集群/">Docker 搭建 MongoDB 分片集群</a>
+      </li>
+    
+      <li>
+        <a href="/2017/04/11/Linux-的I-O-模型/">Linux 的I/O 模型</a>
+      </li>
+    
+  </ul>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">标签</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/Docker/">Docker</a><small>1</small></li>
+  
+    <li><a href="/tags/Golang/">Golang</a><small>15</small></li>
+  
+    <li><a href="/tags/Linux/">Linux</a><small>4</small></li>
+  
+    <li><a href="/tags/MongoDB/">MongoDB</a><small>4</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tagcloud">
+  <h3 class="title">标签云</h3>
+  <div class="entry">
+    <a href="/tags/Docker/" style="font-size: 10px;">Docker</a> <a href="/tags/Golang/" style="font-size: 20px;">Golang</a> <a href="/tags/Linux/" style="font-size: 15px;">Linux</a> <a href="/tags/MongoDB/" style="font-size: 15px;">MongoDB</a>
+  </div>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  <p>
+  
+  &copy; 2017 Yang Chenglong
+  
+  All rights reserved.</p>
+  <p>Powered by <a href="http://hexo.io/" target="_blank">Hexo</a></p>
+</div>
+<div class="clearfix"></div>
+
+<script>window._bd_share_config={"common":{"bdSnsKey":{},"bdText":"","bdMini":"1","bdMiniList":false,"bdPic":"","bdStyle":"2","bdSize":"16"},"share":{}};with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='http://bdimg.share.baidu.com/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];</script></footer>
+  <script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+
+<div id='bg'></div>
+  
+    <script type="text/javascript" src="/live2d/script.js"></script>
+    <canvas id="live2dcanvas" width="150" height="300" class="live2d"></canvas>
+    <style>
+      #live2dcanvas {
+        position: fixed;
+        right: 0px;
+        z-index: 999;
+        pointer-events: none;
+        bottom: -20px;
+      }
+    </style>
+    <script>loadlive2d("live2dcanvas" ,"/live2d/assets/z16/z16.model.json",0.5)</script>
+  
+</body>
+</html>
