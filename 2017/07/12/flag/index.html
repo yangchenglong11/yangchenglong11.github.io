@@ -1,0 +1,263 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8" />
+  
+  <title>flag | yangcl&#39;s</title>
+  <meta name="author" content="Yang Chenglong" />
+
+  
+  <meta name="description" content="Yangcl&#39;s Blog" />
+  
+
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+  <meta property="og:title" content="flag" />
+  <meta property="og:site_name" content="yangcl&#39;s" />
+
+  
+  
+
+  
+    <meta property="og:image" content="" />
+  
+
+  
+  <link href="/css/images/favicon.ico" rel="icon" />
+  
+
+  <link rel="alternate" href="/atom.xml" title="yangcl&#39;s" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+
+
+  <!-- baidu webmaster push -->
+  <script src='//push.zhanzhang.baidu.com/push.js'></script>
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">yangcl&#39;s</a></h1>
+  <h2><a href="/">悟已往之不谏，知来者之可追。</a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+      <li><a href="/atom.xml">RSS</a></li>
+    
+      <li><a href="https://github.com/yangchenglong11">github</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2017-07-12T08:14:32.000Z"><a href="/2017/07/12/flag/">2017-07-12</a></time>
+      
+      
+  
+    <h1 class="title">flag</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p><strong>flag</strong> 是Go 标准库提供的解析命令行参数的包。flag跟以往的传统命令行解析不同,它将参数定义, 参数默认值, 命令帮助, 参数读取集成到一起,摆脱以前繁琐的命令判断流程.</p>
+<a id="more"></a>
+<p><strong>使用方式：</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">flag.Type(name, defValue, usage)</div></pre></td></tr></table></figure>
+<p>其中Type为String, Int, Bool等；并返回一个相应类型的指针。</p>
+<figure class="highlight sqf"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">flag</span>.TypeVar(&amp;flagvar, <span class="built_in">name</span>, defValue, usage)</div></pre></td></tr></table></figure>
+<p>将flag绑定到一个变量上。</p>
+<p>##返回指针<br>通过flag.String, flag.Int, flag.Bool等可以直接返回一个参数指针,因此后续使用的时候需要加*进行取值:<br><figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">str = flag.String(<span class="string">"mystring"</span>, <span class="string">"default-value"</span>, <span class="string">"mystring is my test flag of String"</span>)</div><div class="line">i = flag.Int(<span class="string">"myint"</span>, <span class="number">123</span>, <span class="string">"test int flag"</span>)</div></pre></td></tr></table></figure></p>
+<p>##序列化到变量<br>通过flag.StringVar, flag.IntVar, flag.BoolVar等,可以直接把值序列化到变量:<br><figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">   flag.StringVar(&amp;vStr, <span class="string">"mystring2"</span>, <span class="string">"default-value2"</span>, <span class="string">"mystring2 is my test flag of String"</span>)</div><div class="line">flag.IntVar(&amp;vI, <span class="string">"myint2"</span>, <span class="number">123</span>, <span class="string">"test int flag"</span>)</div></pre></td></tr></table></figure></p>
+<p><strong>自定义flag</strong></p>
+<p>只要实现flag.Value接口即可：</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">type Value<span class="built_in"> interface </span>&#123;</div><div class="line">  String() string</div><div class="line">  <span class="builtin-name">Set</span>(string) error</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>通过如下方式定义该flag：</p>
+<figure class="highlight delphi"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">flag.<span class="keyword">Var</span>(&amp;flagvar, <span class="keyword">name</span>, usage)</div></pre></td></tr></table></figure>
+<p>example：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">package</span> main</div><div class="line"><span class="keyword">import</span>(</div><div class="line">	<span class="string">"flag"</span></div><div class="line">	<span class="string">"fmt"</span></div><div class="line">	<span class="string">"strconv"</span></div><div class="line">) </div><div class="line"></div><div class="line"><span class="keyword">type</span> percentage <span class="keyword">float32</span></div><div class="line"></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="params">(p *percentage)</span> <span class="title">Set</span><span class="params">(s <span class="keyword">string</span>)</span> <span class="title">error</span></span> &#123;</div><div class="line">	v, err := strconv.ParseFloat(s, <span class="number">32</span>)</div><div class="line">	*p = percentage(v)</div><div class="line">	<span class="keyword">return</span> err</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="params">(p *percentage)</span> <span class="title">String</span><span class="params">()</span> <span class="title">string</span></span> &#123;</div><div class="line">	<span class="keyword">return</span> fmt.Sprintf(<span class="string">"%f"</span>, *p) </div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</div><div class="line">	namePtr := flag.String(<span class="string">"name"</span>, <span class="string">"yang"</span>, <span class="string">"user's name"</span>)</div><div class="line">	agePtr := flag.Int(<span class="string">"age"</span>, <span class="number">20</span>, <span class="string">"user's age"</span>)</div><div class="line">	vipPtr := flag.Bool(<span class="string">"vip"</span>, <span class="literal">true</span>, <span class="string">"is a vip user"</span>)</div><div class="line">	</div><div class="line">	<span class="keyword">var</span> email <span class="keyword">string</span></div><div class="line">	</div><div class="line">	flag.StringVar(&amp;email, <span class="string">"email"</span>, <span class="string">"xxxxxx@gmail.com"</span>, <span class="string">"user's email"</span>)</div><div class="line">	</div><div class="line">	<span class="keyword">var</span> pop percentage</div><div class="line">	</div><div class="line">	flag.Var(&amp;pop, <span class="string">"pop"</span>, <span class="string">"popularity"</span>)</div><div class="line">	</div><div class="line">	flag.Parse()</div><div class="line">	</div><div class="line">	others := flag.Args()</div><div class="line">	fmt.Println(<span class="string">"name:"</span>, *namePtr)</div><div class="line">	fmt.Println(<span class="string">"age:"</span>, *agePtr)</div><div class="line">	fmt.Println(<span class="string">"vip:"</span>, *vipPtr)</div><div class="line">	fmt.Println(<span class="string">"pop:"</span>, pop)</div><div class="line">	fmt.Println(<span class="string">"email:"</span>, email)</div><div class="line">	fmt.Println(<span class="string">"other:"</span>, others)</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>输出：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span><span class="bash"> go run test.go </span></div><div class="line">name: yang</div><div class="line">age: 20</div><div class="line">vip: true</div><div class="line">email: xxxxxx@gmail.com</div><div class="line">other: []</div></pre></td></tr></table></figure>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span><span class="bash"> go run test.go -name golang -age 4 -vip=<span class="literal">true</span> -pop 99 简洁 高并发 等等</span></div><div class="line">name: golang</div><div class="line">age: 4</div><div class="line">vip: true</div><div class="line">pop: 99</div><div class="line">email: lyhopq@gmail.com</div><div class="line">other: [简洁 高并发 等等]</div></pre></td></tr></table></figure>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span><span class="bash"> go run test.go -h</span></div><div class="line">Usage of go /var/folders/6y/z4y473d12fj8ss2gkr276dx80000gn/T/go-build217780999/command-line-arguments/_obj/exe/test :</div><div class="line"> -age=20: user's age</div><div class="line"> -email="xxxxxx@gmail.com": user's email</div><div class="line"> -name="yang": user's name</div><div class="line"> -pop=0.0: popularity</div><div class="line"> -vip=true: is a vip user</div></pre></td></tr></table></figure>
+<h1 id="pflag"><a href="#pflag" class="headerlink" title="pflag"></a>pflag</h1><p>pflag是flag扩展,主要是加入了对短参数的支持.</p>
+<h2 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h2><figure class="highlight sh"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">go get github.com/ogier/pflag</div></pre></td></tr></table></figure>
+<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><figure class="highlight sh"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">go <span class="built_in">test</span> github.com/ogier/pflag</div></pre></td></tr></table></figure>
+<h2 id="使用"><a href="#使用" class="headerlink" title="使用"></a>使用</h2><p>如果你之前已经import了flag包,那么直接把那行改为:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">import</span> flag <span class="string">"github.com/ogier/pflag"</span></div></pre></td></tr></table></figure>
+<h2 id="短参数支持"><a href="#短参数支持" class="headerlink" title="短参数支持"></a>短参数支持</h2><p>在函数后面加上P即可:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">   pflag.StringVarP(&amp;p1, <span class="string">"stringflag"</span>, <span class="string">"s"</span>, <span class="string">"test-p-flag-string"</span>, <span class="string">"test pflag for string."</span>)</div><div class="line">pflag.IntVarP(&amp;p2, <span class="string">"intflag"</span>, <span class="string">"i"</span>, <span class="number">12345</span>, <span class="string">"test pflag for int."</span>)</div></pre></td></tr></table></figure>
+<h2 id="程序运行结果"><a href="#程序运行结果" class="headerlink" title="程序运行结果"></a>程序运行结果</h2><figure class="highlight sh"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">$ go run main.go</div><div class="line"></div><div class="line">Usage of /private/var/folders/98/pmb6b_8x5w5319m9ts6h6z6m0000gn/T/Build main.go and run1go:</div><div class="line">  -i, --intflag=12345: <span class="built_in">test</span> pflag <span class="keyword">for</span> int.</div><div class="line">  -s, --stringflag=<span class="string">"test-p-flag-string"</span>: <span class="built_in">test</span> pflag <span class="keyword">for</span> string.</div></pre></td></tr></table></figure>
+      
+    </div>
+    
+    <footer>
+        <div class="alignright">
+          
+          <a href='javascript:void(0)' class="share-link bdsharebuttonbox" data-cmd="more">分享</a>
+        </div>
+        
+  
+  <div class="categories">
+    <a href="/categories/Golang/">Golang</a>
+  </div>
+
+        
+  
+  <div class="tags">
+    <a href="/tags/Golang/">Golang</a>
+  </div>
+
+        <!-- partial('post/share') -->
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="搜索">
+    <input type="hidden" name="q" value="site:yangchenglong11.github.io">
+  </form>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">分类</h3>
+  <ul class="entry">
+  
+    <li><a href="/categories/Docker/">Docker</a><small>1</small></li>
+  
+    <li><a href="/categories/Golang/">Golang</a><small>15</small></li>
+  
+    <li><a href="/categories/Linux/">Linux</a><small>4</small></li>
+  
+    <li><a href="/categories/MongoDB/">MongoDB</a><small>4</small></li>
+  
+    <li><a href="/categories/Network/">Network</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">最新文章</h3>
+  <ul class="entry">
+    
+      <li>
+        <a href="/2018/01/14/Network学习笔记/">Network学习笔记</a>
+      </li>
+    
+      <li>
+        <a href="/2017/07/12/flag/">flag</a>
+      </li>
+    
+      <li>
+        <a href="/2017/05/26/channel示例之GoTocket/">channel示例之GoTocket</a>
+      </li>
+    
+      <li>
+        <a href="/2017/05/16/cobra/">cobra</a>
+      </li>
+    
+      <li>
+        <a href="/2017/05/04/bufio/">bufio 源码解读</a>
+      </li>
+    
+  </ul>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">标签</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/Docker/">Docker</a><small>1</small></li>
+  
+    <li><a href="/tags/Golang/">Golang</a><small>16</small></li>
+  
+    <li><a href="/tags/Linux/">Linux</a><small>4</small></li>
+  
+    <li><a href="/tags/MongoDB/">MongoDB</a><small>4</small></li>
+  
+    <li><a href="/tags/Network/">Network</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tagcloud">
+  <h3 class="title">标签云</h3>
+  <div class="entry">
+    <a href="/tags/Docker/" style="font-size: 10px;">Docker</a> <a href="/tags/Golang/" style="font-size: 20px;">Golang</a> <a href="/tags/Linux/" style="font-size: 15px;">Linux</a> <a href="/tags/MongoDB/" style="font-size: 15px;">MongoDB</a> <a href="/tags/Network/" style="font-size: 10px;">Network</a>
+  </div>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  <p>
+  
+  &copy; 2018 Yang Chenglong
+  
+  All rights reserved.</p>
+  <p>Powered by <a href="http://hexo.io/" target="_blank">Hexo</a></p>
+</div>
+<div class="clearfix"></div>
+
+<script>window._bd_share_config={"common":{"bdSnsKey":{},"bdText":"","bdMini":"1","bdMiniList":false,"bdPic":"","bdStyle":"2","bdSize":"16"},"share":{}};with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='http://bdimg.share.baidu.com/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];</script></footer>
+  <script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+
+<div id='bg'></div>
+  
+    <script type="text/javascript" src="/live2d/script.js"></script>
+    <canvas id="live2dcanvas" width="300" height="400" class="live2d"></canvas>
+    <style>
+      #live2dcanvas {
+        position: fixed;
+        right: 0px;
+        z-index: 999;
+        pointer-events: none;
+        bottom: -50px;
+      }
+    </style>
+    <script>loadlive2d("live2dcanvas" ,"/live2d/assets/tororo/tororo.model.json",0.5)</script>
+  
+</body>
+</html>
