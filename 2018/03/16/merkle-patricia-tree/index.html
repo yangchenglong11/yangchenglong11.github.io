@@ -67,7 +67,7 @@
     <header>
       
         <div class="icon"></div>
-        <time datetime="2018-03-14T04:42:40.000Z"><a href="/2018/03/14/merkle-patricia-tree/">2018-03-14</a></time>
+        <time datetime="2018-03-16T04:42:40.000Z"><a href="/2018/03/16/merkle-patricia-tree/">2018-03-16</a></time>
       
       
   
@@ -77,7 +77,7 @@
     </header>
     <div class="entry">
       
-        <h1 id="Merkle-Patricia-Tree-梅克尔帕特里夏树-详解"><a href="#Merkle-Patricia-Tree-梅克尔帕特里夏树-详解" class="headerlink" title="Merkle Patricia Tree (梅克尔帕特里夏树) 详解"></a>Merkle Patricia Tree (梅克尔帕特里夏树) 详解</h1><h3 id="1-前言"><a href="#1-前言" class="headerlink" title="1. 前言"></a><strong>1. 前言</strong></h3><h4 id="1-1-概述"><a href="#1-1-概述" class="headerlink" title="1.1 概述"></a><strong>1.1 概述</strong></h4><p>Merkle Patricia Tree（又称为Merkle Patricia Trie）是一种经过改良的、融合了默克尔树和前缀树两种树结构优点的数据结构，是以太坊中用来组织管理账户数据、生成交易集合哈希的重要数据结构。<br><a id="more"></a><br>MPT树有以下几个作用：</p>
+        <h3 id="1-前言"><a href="#1-前言" class="headerlink" title="1. 前言"></a><strong>1. 前言</strong></h3><h4 id="1-1-概述"><a href="#1-1-概述" class="headerlink" title="1.1 概述"></a><strong>1.1 概述</strong></h4><p>Merkle Patricia Tree（又称为Merkle Patricia Trie）是一种经过改良的、融合了默克尔树和前缀树两种树结构优点的数据结构，是以太坊中用来组织管理账户数据、生成交易集合哈希的重要数据结构。<br><a id="more"></a><br>MPT树有以下几个作用：</p>
 <ul>
 <li>存储任意长度的key-value键值对数据；</li>
 <li>提供了一种快速计算所维护数据集哈希标识的机制；</li>
@@ -87,7 +87,7 @@
 <p>由于MPT结合了（1）前缀树（2）默克尔树两种树结构的特点与优势 ，因此在介绍MPT之前，我们首先简要地介绍下这两种树结构的特点。</p>
 <h4 id="1-2-前缀树"><a href="#1-2-前缀树" class="headerlink" title="1.2 前缀树"></a><strong>1.2 前缀树</strong></h4><p>前缀树（又称字典树），用于保存关联数组，其键（key）的内容通常为字符串。前缀树节点在树中的位置是由其键的内容所决定的，即前缀树的key值被编码在根节点到该节点的路径中。</p>
 <p>如下图所示，图中共有6个叶子节点，其key的值分别为（1）tc（2）tea（3）ted（4）ten（5）Ab（6）il。</p>
-<p><img src="/2018/03/14/merkle-patricia-tree/trie.png" alt="trie"></p>
+<p><img src="/2018/03/16/merkle-patricia-tree/trie.png" alt="trie"></p>
 <p><strong>优势</strong>：</p>
 <p>相比于哈希表，使用前缀树来进行查询拥有共同前缀key的数据时十分高效，例如在字典中查找前缀为pre的单词，对于哈希表来说，需要遍历整个表，时间效率为O(n)；然而对于前缀树来说，只需要在树中找到前缀为pre的节点，且遍历以这个节点为根节点的子树即可。</p>
 <p>但是对于最差的情况（前缀为空串），时间效率为O(n)，仍然需要遍历整棵树，此时效率与哈希表相同。</p>
@@ -111,7 +111,7 @@
 </ul>
 <p><strong>原理</strong></p>
 <p>在比特币网络中，merkle树是自底向上构建的。在下图的例子中，首先将L1-L4四个单元数据哈希化，然后将哈希值存储至相应的叶子节点。这些节点是Hash0-0, Hash0-1, Hash1-0, Hash1-1</p>
-<p><img src="/2018/03/14/merkle-patricia-tree/merkle.png" alt="merkle"></p>
+<p><img src="/2018/03/16/merkle-patricia-tree/merkle.png" alt="merkle"></p>
 <p>将相邻两个节点的哈希值合并成一个字符串，然后计算这个字符串的哈希，得到的就是这两个节点的父节点的哈希值。</p>
 <p>如果该层的树节点个数是单数，那么对于最后剩下的树节点，这种情况就直接对它进行哈希运算，其父节点的哈希就是其哈希值的哈希值（对于单数个叶子节点，有着不同的处理方法，也可以采用复制最后一个叶子节点凑齐偶数个叶子节点的方式）。循环重复上述计算过程，最后计算得到最后一个节点的哈希值，将该节点的哈希值作为整棵树的哈希。</p>
 <p>若两棵树的根哈希一致，则这两棵树的结构、节点的内容必然相同。</p>
@@ -161,11 +161,11 @@
 </ul>
 <p>其中<code>Key</code>是MPT树实现树高压缩的关键！</p>
 <p>如之前所提及的，前缀树中会出现严重的存储空间浪费的情况，如下图：</p>
-<p><img src="/2018/03/14/merkle-patricia-tree/bad_trie.jpg" alt="bad_trie"></p>
+<p><img src="/2018/03/16/merkle-patricia-tree/bad_trie.jpg" alt="bad_trie"></p>
 <p>图中右侧有一长串节点，这些节点大部分只是充当非叶子节点，用来构建一条路径，目的只是为了存储该路径上的叶子节点。</p>
 <p>针对这种情况，MPT树对此进行了优化：当MPT试图插入一个节点，插入过程中发现目前没有与该节点Key拥有相同前缀的路径。此时MPT把<strong>剩余的Key</strong>存储在叶子／扩展节点的Key字段中，充当一个”Shortcut“。</p>
 <p>例如图中我们将红线所圈的节点称为node1, 将蓝线所圈的节点称为node2。node1与node2共享路径前缀t，但是node1在插入时，树中没有与oast有共同前缀的路径，<em>因此node1的key为oast</em>，实现了编码路径的压缩。</p>
-<p><img src="/2018/03/14/merkle-patricia-tree/shortcut.jpg" alt="shortcut"></p>
+<p><img src="/2018/03/16/merkle-patricia-tree/shortcut.jpg" alt="shortcut"></p>
 <p>这种做法有以下几点优势：</p>
 <ul>
 <li>提高节点的查找效率，避免过多的磁盘访问；</li>
@@ -224,7 +224,7 @@
 </blockquote>
 <p><em>HP编码用于对数据库中的树节点key进行编码</em></p>
 <p><strong>转换关系</strong></p>
-<p><img src="/2018/03/14/merkle-patricia-tree/conversion.png" alt="conversion"></p>
+<p><img src="/2018/03/16/merkle-patricia-tree/conversion.png" alt="conversion"></p>
 <p>以上三种编码方式的转换关系为：</p>
 <ul>
 <li>Raw编码：原生的key编码，是MPT对外提供接口中使用的编码方式，当数据项被插入到树中时，Raw编码被转换成Hex编码；</li>
@@ -259,7 +259,7 @@
 <li>若当前节点为叶子节点，存储的内容是数据项的内容，且<em>搜索路径的内容</em>与叶子节点的key一致，则表示找到该节点；反之则表示该节点在树中不存在。</li>
 <li>若当前节点为扩展节点，且存储的内容是哈希索引，则利用哈希索引从数据库中加载该节点，再将<em>搜索路径</em>作为参数，对新解析出来的节点递归地调用查找函数。</li>
 <li>若当前节点为扩展节点，存储的内容是另外一个节点的引用，且当前节点的key是<em>搜索路径</em>的前缀，则将<em>搜索路径</em>减去当前节点的key，将剩余的<em>搜索路径</em>作为参数，对其子节点递归地调用查找函数；若当前节点的key不是<em>搜索路径</em>的前缀，表示该节点在树中不存在。</li>
-<li>若当前节点为分支节点，若<em>搜索路径</em>为空，则返回分支节点的存储内容；反之利用<em>搜索路径</em>的第一个字节选择分支节点的孩子节点，将剩余的<em>搜索路径</em>作为参数递归地调用查找函数。<br><a href="https://github.com/fengyfei/wizard/blob/master/blockchain/images/get.jpeg?raw=true" target="_blank" rel="external">https://github.com/fengyfei/wizard/blob/master/blockchain/images/get.jpeg?raw=true</a><br><img src="/2018/03/14/merkle-patricia-tree/get.jpeg" alt="get"></li>
+<li>若当前节点为分支节点，若<em>搜索路径</em>为空，则返回分支节点的存储内容；反之利用<em>搜索路径</em>的第一个字节选择分支节点的孩子节点，将剩余的<em>搜索路径</em>作为参数递归地调用查找函数。<br><a href="https://github.com/fengyfei/wizard/blob/master/blockchain/images/get.jpeg?raw=true" target="_blank" rel="external">https://github.com/fengyfei/wizard/blob/master/blockchain/images/get.jpeg?raw=true</a><br><img src="/2018/03/16/merkle-patricia-tree/get.jpeg" alt="get"></li>
 </ol>
 </li>
 </ol>
@@ -285,7 +285,7 @@
 </li>
 <li>若插入成功，则将被修改节点的dirty标志置为true，hash标志置空（之前的结果已经不可能用），且将节点的诞生标记更新为<em>现在</em>；</li>
 </ol>
-<p><img src="/2018/03/14/merkle-patricia-tree/insert.jpeg" alt="insert"></p>
+<p><img src="/2018/03/16/merkle-patricia-tree/insert.jpeg" alt="insert"></p>
 <p>上图是一次将key为“cau”, value为“dog1”节点插入的过程。</p>
 <ol>
 <li>将key”cau”转换成hex编码[3,15,3,13,4,11,T] ；</li>
@@ -309,8 +309,8 @@
 </li>
 <li>若删除成功，则将被修改节点的dirty标志置为true，hash标志置空（之前的结果已经不可能用），且将节点的诞生标记更新为<em>现在</em>；</li>
 </ol>
-<p><img src="/2018/03/14/merkle-patricia-tree/delete_1.jpeg" alt="delete_1"></p>
-<p><img src="/2018/03/14/merkle-patricia-tree/delete_2.jpeg" alt="delete_2"></p>
+<p><img src="/2018/03/16/merkle-patricia-tree/delete_1.jpeg" alt="delete_1"></p>
+<p><img src="/2018/03/16/merkle-patricia-tree/delete_2.jpeg" alt="delete_2"></p>
 <p>上面两幅图是一次将key为“cat”, value为“dog1”节点删除的过程。</p>
 <ol>
 <li>将key”cau”转换成hex编码[3,15,3,13,4,11,T] ；</li>
@@ -423,7 +423,7 @@
   <h3 class="title">分类</h3>
   <ul class="entry">
   
-    <li><a href="/categories/BlockChain/">BlockChain</a><small>2</small></li>
+    <li><a href="/categories/BlockChain/">BlockChain</a><small>5</small></li>
   
     <li><a href="/categories/Docker/">Docker</a><small>1</small></li>
   
@@ -445,23 +445,23 @@
   <ul class="entry">
     
       <li>
-        <a href="/2018/03/16/the-store-of-block/">区块存储</a>
+        <a href="/2018/03/18/the-store-of-block/">区块存储</a>
       </li>
     
       <li>
-        <a href="/2018/03/14/merkle-patricia-tree/">Merkle Patricia Tree (梅克尔帕特里夏树) 详解</a>
+        <a href="/2018/03/16/merkle-patricia-tree/">Merkle Patricia Tree (梅克尔帕特里夏树) 详解</a>
       </li>
     
       <li>
-        <a href="/2018/01/14/Network学习笔记/">Network学习笔记</a>
+        <a href="/2018/03/13/the-basic-of-ethereum/">初识以太坊</a>
       </li>
     
       <li>
-        <a href="/2017/07/15/iptables/">iptables</a>
+        <a href="/2018/03/11/transaction-and-scripts-of-bitcoin/">比特币分析之交易、脚本</a>
       </li>
     
       <li>
-        <a href="/2017/07/12/flag/">flag</a>
+        <a href="/2018/03/09/the-basic-of-bitcoin/">区块链是什么</a>
       </li>
     
   </ul>
@@ -473,7 +473,7 @@
   <h3 class="title">标签</h3>
   <ul class="entry">
   
-    <li><a href="/tags/BlockChain/">BlockChain</a><small>2</small></li>
+    <li><a href="/tags/BlockChain/">BlockChain</a><small>5</small></li>
   
     <li><a href="/tags/Docker/">Docker</a><small>1</small></li>
   
@@ -493,7 +493,7 @@
 <div class="widget tagcloud">
   <h3 class="title">标签云</h3>
   <div class="entry">
-    <a href="/tags/BlockChain/" style="font-size: 12.5px;">BlockChain</a> <a href="/tags/Docker/" style="font-size: 10px;">Docker</a> <a href="/tags/Golang/" style="font-size: 20px;">Golang</a> <a href="/tags/Linux/" style="font-size: 17.5px;">Linux</a> <a href="/tags/MongoDB/" style="font-size: 15px;">MongoDB</a> <a href="/tags/Network/" style="font-size: 10px;">Network</a>
+    <a href="/tags/BlockChain/" style="font-size: 16.67px;">BlockChain</a> <a href="/tags/Docker/" style="font-size: 10px;">Docker</a> <a href="/tags/Golang/" style="font-size: 20px;">Golang</a> <a href="/tags/Linux/" style="font-size: 16.67px;">Linux</a> <a href="/tags/MongoDB/" style="font-size: 13.33px;">MongoDB</a> <a href="/tags/Network/" style="font-size: 10px;">Network</a>
   </div>
 </div>
 
