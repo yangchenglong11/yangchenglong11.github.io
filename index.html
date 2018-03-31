@@ -78,36 +78,15 @@
     </header>
     <div class="entry">
       
-        <h2 id="区块存储"><a href="#区块存储" class="headerlink" title="区块存储"></a>区块存储</h2><h3 id="区块-Block-是以太坊的核心数据结构之一，Block包含Header和Body两部分。区块的存储是由leveldb完成的，leveldb的数据是以键值对存储的。"><a href="#区块-Block-是以太坊的核心数据结构之一，Block包含Header和Body两部分。区块的存储是由leveldb完成的，leveldb的数据是以键值对存储的。" class="headerlink" title="区块(Block)是以太坊的核心数据结构之一，Block包含Header和Body两部分。区块的存储是由leveldb完成的，leveldb的数据是以键值对存储的。"></a>区块(Block)是以太坊的核心数据结构之一，Block包含Header和Body两部分。区块的存储是由leveldb完成的，leveldb的数据是以键值对存储的。</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// BlockChain 表示了一个规范的链,这个链通过一个包含了创世区块的数据库指定. BlockChain管理了链的插入,还原,重建等操作.</span></div><div class="line"><span class="comment">// 插入一个区块需要通过一系列指定的规则指定的两阶段的验证器.</span></div><div class="line"><span class="comment">// 使用Processor来对区块的交易进行处理. 状态的验证是第二阶段的验证器. 错误将导致插入终止.</span></div><div class="line"><span class="comment">// 需要注意的是GetBlock可能返回任意不在当前规范区块链中的区块,</span></div><div class="line"><span class="comment">// 但是GetBlockByNumber总是返回当前规范区块链中的区块.</span></div><div class="line"><span class="keyword">type</span> BlockChain <span class="keyword">struct</span> &#123;</div><div class="line">    chainConfig *params.ChainConfig <span class="comment">// Chain &amp; network configuration</span></div><div class="line">    cacheConfig *CacheConfig        <span class="comment">// Cache configuration for pruning</span></div><div class="line"></div><div class="line">    db     ethdb.Database <span class="comment">// Low level persistent database to store final content in</span></div><div class="line">    triegc *prque.Prque   <span class="comment">// Priority queue mapping block numbers to tries to gc</span></div><div class="line">    gcproc time.Duration  <span class="comment">// Accumulates canonical block processing for trie dumping</span></div><div class="line"></div><div class="line">    hc            *HeaderChain <span class="comment">// 只包含了区块头的区块链</span></div><div class="line">    rmLogsFeed    event.Feed   <span class="comment">// 底层数据库</span></div><div class="line">    chainFeed     event.Feed   <span class="comment">// 下面是很多消息通知的组件</span></div><div class="line">    chainSideFeed event.Feed</div><div class="line">    chainHeadFeed event.Feed</div><div class="line">    logsFeed      event.Feed</div><div class="line">    scope         event.SubscriptionScope</div><div class="line">    genesisBlock  *types.Block  <span class="comment">// 创世区块</span></div><div class="line"></div><div class="line">    mu      sync.RWMutex <span class="comment">// global mutex for locking chain operations</span></div><div class="line">    chainmu sync.RWMutex <span class="comment">// blockchain insertion lock</span></div><div class="line">    procmu  sync.RWMutex <span class="comment">// block processor lock</span></div><div class="line"></div><div class="line">    checkpoint       <span class="keyword">int</span>          <span class="comment">// checkpoint counts towards the new checkpoint</span></div><div class="line">    currentBlock     *types.Block <span class="comment">// Current head of the block chain 当前的区块头</span></div><div class="line">    currentFastBlock *types.Block <span class="comment">// Current head of the fast-sync chain (may be above the block chain!) 当前的快速同步的区块头</span></div><div class="line"></div><div class="line">    stateCache   state.Database <span class="comment">// State database to reuse between imports (contains state cache)</span></div><div class="line">    bodyCache    *lru.Cache     <span class="comment">// Cache for the most recent block bodies</span></div><div class="line">    bodyRLPCache *lru.Cache     <span class="comment">// Cache for the most recent block bodies in RLP encoded format</span></div><div class="line">    blockCache   *lru.Cache     <span class="comment">// Cache for the most recent entire blocks</span></div><div class="line">    futureBlocks *lru.Cache     <span class="comment">// future blocks are blocks added for later processing 暂时还不能插入的区块存放位置</span></div><div class="line"></div><div class="line">    quit    <span class="keyword">chan</span> <span class="keyword">struct</span>&#123;&#125; <span class="comment">// blockchain quit channel</span></div><div class="line">    running <span class="keyword">int32</span>         <span class="comment">// running must be called atomically</span></div><div class="line">    <span class="comment">// procInterrupt must be atomically called</span></div><div class="line">    procInterrupt <span class="keyword">int32</span>          <span class="comment">// interrupt signaler for block processing</span></div><div class="line">    wg            sync.WaitGroup <span class="comment">// chain processing wait group for shutting down</span></div><div class="line"></div><div class="line">    engine    consensus.Engine  <span class="comment">// 一致性引擎</span></div><div class="line">    processor Processor <span class="comment">// block processor interface    // 区块处理器接口</span></div><div class="line">    validator Validator <span class="comment">// block and state validator interface // 区块和状态验证器接口</span></div><div class="line">    vmConfig  vm.Config <span class="comment">// 虚拟机的配置</span></div><div class="line"></div><div class="line">    badBlocks *lru.Cache <span class="comment">// Bad block cache 错误区块的缓存</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// Block represents an entire block in the Ethereum blockchain.</span></div><div class="line"><span class="keyword">type</span> Block <span class="keyword">struct</span> &#123;</div><div class="line">   header       *Header</div><div class="line">   uncles       []*Header</div><div class="line">   transactions Transactions</div><div class="line"></div><div class="line">   <span class="comment">// caches</span></div><div class="line">   hash atomic.Value</div><div class="line">   size atomic.Value</div><div class="line"></div><div class="line">   <span class="comment">// Td is used by package core to store the total difficulty</span></div><div class="line">   <span class="comment">// of the chain up to and including the block.</span></div><div class="line">   td *big.Int</div><div class="line"></div><div class="line">   <span class="comment">// These fields are used by package eth to track</span></div><div class="line">   <span class="comment">// inter-peer block relay.</span></div><div class="line">   ReceivedAt   time.Time</div><div class="line">   ReceivedFrom <span class="keyword">interface</span>&#123;&#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// Header represents a block header in the Ethereum blockchain.</span></div><div class="line"><span class="keyword">type</span> Header <span class="keyword">struct</span> &#123;</div><div class="line">   ParentHash  common.Hash    <span class="string">`json:"parentHash"       gencodec:"required"`</span></div><div class="line">   UncleHash   common.Hash    <span class="string">`json:"sha3Uncles"       gencodec:"required"`</span></div><div class="line">   Coinbase    common.Address <span class="string">`json:"miner"            gencodec:"required"`</span></div><div class="line">   Root        common.Hash    <span class="string">`json:"stateRoot"        gencodec:"required"`</span></div><div class="line">   TxHash      common.Hash    <span class="string">`json:"transactionsRoot" gencodec:"required"`</span></div><div class="line">   ReceiptHash common.Hash    <span class="string">`json:"receiptsRoot"     gencodec:"required"`</span></div><div class="line">   Bloom       Bloom          <span class="string">`json:"logsBloom"        gencodec:"required"`</span></div><div class="line">   Difficulty  *big.Int       <span class="string">`json:"difficulty"       gencodec:"required"`</span></div><div class="line">   Number      *big.Int       <span class="string">`json:"number"           gencodec:"required"`</span></div><div class="line">   GasLimit    <span class="keyword">uint64</span>         <span class="string">`json:"gasLimit"         gencodec:"required"`</span></div><div class="line">   GasUsed     <span class="keyword">uint64</span>         <span class="string">`json:"gasUsed"          gencodec:"required"`</span></div><div class="line">   Time        *big.Int       <span class="string">`json:"timestamp"        gencodec:"required"`</span></div><div class="line">   Extra       []<span class="keyword">byte</span>         <span class="string">`json:"extraData"        gencodec:"required"`</span></div><div class="line">   MixDigest   common.Hash    <span class="string">`json:"mixHash"          gencodec:"required"`</span></div><div class="line">   Nonce       BlockNonce     <span class="string">`json:"nonce"            gencodec:"required"`</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<h4 id="bitcoin"><a href="#bitcoin" class="headerlink" title="bitcoin"></a>bitcoin</h4><p><img src="https://images2018.cnblogs.com/blog/1230529/201803/1230529-20180327151644484-1676549934.png" alt="img"></p>
-<h4 id="ethereum"><a href="#ethereum" class="headerlink" title="ethereum"></a>ethereum</h4><p><img src="https://images2018.cnblogs.com/blog/1230529/201803/1230529-20180327151654351-349954582.png" alt="img"></p>
-<h4 id="以太坊的数据库体系-Merkle-Patricia-Trie-MPT-，-它是由一系列节点组成的二叉树，在树底包含了源数据的大量叶子节点，-父节点是两个子节点的Hash值，一直到根节点。"><a href="#以太坊的数据库体系-Merkle-Patricia-Trie-MPT-，-它是由一系列节点组成的二叉树，在树底包含了源数据的大量叶子节点，-父节点是两个子节点的Hash值，一直到根节点。" class="headerlink" title="以太坊的数据库体系-Merkle-Patricia Trie(MPT)， 它是由一系列节点组成的二叉树，在树底包含了源数据的大量叶子节点， 父节点是两个子节点的Hash值，一直到根节点。"></a>以太坊的数据库体系-Merkle-Patricia Trie(MPT)， 它是由一系列节点组成的二叉树，在树底包含了源数据的大量叶子节点， 父节点是两个子节点的Hash值，一直到根节点。</h4><h4 id="Blockchain和HeaderChain，-Blockchain管理所有的Block-让其组成一个单向链表。Headerchain管理所有的Header-也形成一个单向链表，-Headerchain是Blockchain里面的一部分"><a href="#Blockchain和HeaderChain，-Blockchain管理所有的Block-让其组成一个单向链表。Headerchain管理所有的Header-也形成一个单向链表，-Headerchain是Blockchain里面的一部分" class="headerlink" title="Blockchain和HeaderChain， Blockchain管理所有的Block, 让其组成一个单向链表。Headerchain管理所有的Header,也形成一个单向链表， Headerchain是Blockchain里面的一部分"></a>Blockchain和HeaderChain， Blockchain管理所有的Block, 让其组成一个单向链表。Headerchain管理所有的Header,也形成一个单向链表， Headerchain是Blockchain里面的一部分</h4><h4 id="Transaction是Body的重要数据结构，一个交易就是被外部拥有账户生成的加密签名的一段指令，序列化，然后提交给区块链。"><a href="#Transaction是Body的重要数据结构，一个交易就是被外部拥有账户生成的加密签名的一段指令，序列化，然后提交给区块链。" class="headerlink" title="Transaction是Body的重要数据结构，一个交易就是被外部拥有账户生成的加密签名的一段指令，序列化，然后提交给区块链。"></a>Transaction是Body的重要数据结构，一个交易就是被外部拥有账户生成的加密签名的一段指令，序列化，然后提交给区块链。</h4><p>在这里保存区块信息时，key一般是与hash相关的，value所保存的数据结构是经过RLP编码的。<br>在代码中，core/database_util.go中封装了区块存储和读取相关的代码。<br>在存储区块信息时，会将区块头和区块体分开进行存储。因此在区块的结构体中，能够看到Header和Body两个结构体。<br>区块头（Header）的存储格式为：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">headerPrefix + num (<span class="keyword">uint64</span> big endian) + hash -&gt; rlpEncode(header)</div></pre></td></tr></table></figure>
-<p>key是由区块头的前缀，区块号和区块hash构成。value是区块头的RLP编码。<br>区块体（Body）的存储格式为：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">bodyPrefix + num (<span class="keyword">uint64</span> big endian) + hash -&gt; rlpEncode(block body)</div></pre></td></tr></table></figure>
-<p>key是由区块体前缀，区块号和区块hash构成。value是区块体的RLP编码。<br>在database_util.go中，key的前缀可以区分leveldb中存储的是什么类型的数据。</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">var</span> (</div><div class="line">    headHeaderKey = []<span class="keyword">byte</span>(<span class="string">"LastHeader"</span>)</div><div class="line">    headBlockKey  = []<span class="keyword">byte</span>(<span class="string">"LastBlock"</span>)</div><div class="line">    headFastKey   = []<span class="keyword">byte</span>(<span class="string">"LastFast"</span>)</div><div class="line"></div><div class="line">    <span class="comment">// Data item prefixes (use single byte to avoid mixing data types, avoid `i`).</span></div><div class="line">    headerPrefix        = []<span class="keyword">byte</span>(<span class="string">"h"</span>) <span class="comment">// headerPrefix + num (uint64 big endian) + hash -&gt; header</span></div><div class="line">    tdSuffix            = []<span class="keyword">byte</span>(<span class="string">"t"</span>) <span class="comment">// headerPrefix + num (uint64 big endian) + hash + tdSuffix -&gt; td</span></div><div class="line">    numSuffix           = []<span class="keyword">byte</span>(<span class="string">"n"</span>) <span class="comment">// headerPrefix + num (uint64 big endian) + numSuffix -&gt; hash</span></div><div class="line">    blockHashPrefix     = []<span class="keyword">byte</span>(<span class="string">"H"</span>) <span class="comment">// blockHashPrefix + hash -&gt; num (uint64 big endian)</span></div><div class="line">    bodyPrefix          = []<span class="keyword">byte</span>(<span class="string">"b"</span>) <span class="comment">// bodyPrefix + num (uint64 big endian) + hash -&gt; block body</span></div><div class="line">    blockReceiptsPrefix = []<span class="keyword">byte</span>(<span class="string">"r"</span>) <span class="comment">// blockReceiptsPrefix + num (uint64 big endian) + hash -&gt; block receipts</span></div><div class="line">    lookupPrefix        = []<span class="keyword">byte</span>(<span class="string">"l"</span>) <span class="comment">// lookupPrefix + hash -&gt; transaction/receipt lookup metadata</span></div><div class="line">    bloomBitsPrefix     = []<span class="keyword">byte</span>(<span class="string">"B"</span>) <span class="comment">// bloomBitsPrefix + bit (uint16 big endian) + section (uint64 big endian) + hash -&gt; bloom bits</span></div><div class="line"></div><div class="line">    preimagePrefix = <span class="string">"secure-key-"</span>              <span class="comment">// preimagePrefix + hash -&gt; preimage</span></div><div class="line">    configPrefix   = []<span class="keyword">byte</span>(<span class="string">"ethereum-config-"</span>) <span class="comment">// config prefix for the db</span></div><div class="line"></div><div class="line">    <span class="comment">// Chain index prefixes (use `i` + single byte to avoid mixing data types).</span></div><div class="line">    BloomBitsIndexPrefix = []<span class="keyword">byte</span>(<span class="string">"iB"</span>) <span class="comment">// BloomBitsIndexPrefix is the data table of a chain indexer to track its progress</span></div><div class="line"></div><div class="line">    <span class="comment">// used by old db, now only used for conversion</span></div><div class="line">    oldReceiptsPrefix = []<span class="keyword">byte</span>(<span class="string">"receipts-"</span>)</div><div class="line">    oldTxMetaSuffix   = []<span class="keyword">byte</span>&#123;<span class="number">0x01</span>&#125;</div><div class="line"></div><div class="line">    ErrChainConfigNotFound = errors.New(<span class="string">"ChainConfig not found"</span>) <span class="comment">// general config not found error</span></div><div class="line"></div><div class="line">    preimageCounter    = metrics.NewCounter(<span class="string">"db/preimage/total"</span>)</div><div class="line">    preimageHitCounter = metrics.NewCounter(<span class="string">"db/preimage/hits"</span>)</div><div class="line">)</div></pre></td></tr></table></figure>
-<p>database_util.go最开始就定义了所有的前缀。这里的注释详细说明了每一个前缀存储了什么数据类型。<br>database_util.go中的其他方法则是对leveldb的操作。其中get方法是读取数据库中的内容，write则是向leveldb中写入数据。<br>要讲一个区块的信息写入数据库，则需要调用其中的WriteBlock方法。</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// WriteBlock serializes a block into the database, header and body separately.</span></div><div class="line">    <span class="function"><span class="keyword">func</span> <span class="title">WriteBlock</span><span class="params">(db ethdb.Putter, block *types.Block)</span> <span class="title">error</span></span> &#123;</div><div class="line">        <span class="comment">// Store the body first to retain database consistency</span></div><div class="line">        <span class="keyword">if</span> err := WriteBody(db, block.Hash(), block.NumberU64(), block.Body()); err != <span class="literal">nil</span> &#123;</div><div class="line">            <span class="keyword">return</span> err</div><div class="line">        &#125;</div><div class="line">        <span class="comment">// Store the header too, signaling full block ownership</span></div><div class="line">        <span class="keyword">if</span> err := WriteHeader(db, block.Header()); err != <span class="literal">nil</span> &#123;</div><div class="line">            <span class="keyword">return</span> err</div><div class="line">        &#125;</div><div class="line">        <span class="keyword">return</span> <span class="literal">nil</span></div><div class="line">    &#125;</div></pre></td></tr></table></figure>
-<p>这里我们看到，将一个区块信息写入数据库其实是分别将区块头和区块体写入数据库。<br>首先来看区块头的存储。区块头的存储是由WriteHeader方法完成的。</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// WriteHeader serializes a block header into the database.</span></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">WriteHeader</span><span class="params">(db ethdb.Putter, header *types.Header)</span> <span class="title">error</span></span> &#123;</div><div class="line">    data, err := rlp.EncodeToBytes(header)</div><div class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</div><div class="line">        <span class="keyword">return</span> err</div><div class="line">    &#125;</div><div class="line">    hash := header.Hash().Bytes()</div><div class="line">    num := header.Number.Uint64()</div><div class="line">    encNum := encodeBlockNumber(num)</div><div class="line">    key := <span class="built_in">append</span>(blockHashPrefix, hash...)</div><div class="line">    <span class="keyword">if</span> err := db.Put(key, encNum); err != <span class="literal">nil</span> &#123;</div><div class="line">        log.Crit(<span class="string">"Failed to store hash to number mapping"</span>, <span class="string">"err"</span>, err)</div><div class="line">    &#125;</div><div class="line">    key = <span class="built_in">append</span>(<span class="built_in">append</span>(headerPrefix, encNum...), hash...)</div><div class="line">    <span class="keyword">if</span> err := db.Put(key, data); err != <span class="literal">nil</span> &#123;</div><div class="line">        log.Crit(<span class="string">"Failed to store header"</span>, <span class="string">"err"</span>, err)</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="literal">nil</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>这里首先对区块头进行了RLP编码，然后将区块号转换成为byte格式，开始组装key。<br>这里首先向数据库中存储了一条区块hash-&gt;区块号的键值对，然后才将区块头的信息写入数据库。<br>接下来是区块体的存储。区块体存储是由WriteBody方法实现。</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// WriteBody serializes the body of a block into the database.</span></div><div class="line">    <span class="function"><span class="keyword">func</span> <span class="title">WriteBody</span><span class="params">(db ethdb.Putter, hash common.Hash, number <span class="keyword">uint64</span>, body *types.Body)</span> <span class="title">error</span></span> &#123;</div><div class="line">        data, err := rlp.EncodeToBytes(body)</div><div class="line">        <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</div><div class="line">            <span class="keyword">return</span> err</div><div class="line">        &#125;</div><div class="line">        <span class="keyword">return</span> WriteBodyRLP(db, hash, number, data)</div><div class="line">    &#125;</div><div class="line"></div><div class="line"><span class="comment">// WriteBodyRLP writes a serialized body of a block into the database.</span></div><div class="line">    <span class="function"><span class="keyword">func</span> <span class="title">WriteBodyRLP</span><span class="params">(db ethdb.Putter, hash common.Hash, number <span class="keyword">uint64</span>, rlp rlp.RawValue)</span> <span class="title">error</span></span> &#123;</div><div class="line">        key := <span class="built_in">append</span>(<span class="built_in">append</span>(bodyPrefix, encodeBlockNumber(number)...), hash.Bytes()...)</div><div class="line">        <span class="keyword">if</span> err := db.Put(key, rlp); err != <span class="literal">nil</span> &#123;</div><div class="line">            log.Crit(<span class="string">"Failed to store block body"</span>, <span class="string">"err"</span>, err)</div><div class="line">        &#125;</div><div class="line">        <span class="keyword">return</span> <span class="literal">nil</span></div><div class="line">    &#125;</div></pre></td></tr></table></figure>
-<p>WriteBody首先将区块体的信息进行RLP编码，然后调用WriteBodyRLP方法将区块体的信息写入数据库。key的组装方法如之前所述。</p>
-<h2 id="交易存储"><a href="#交易存储" class="headerlink" title="交易存储"></a>交易存储</h2><p>交易主要在数据库中仅存储交易的Meta信息。</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">txHash + txMetaSuffix -&gt; rlpEncode(txMeta)</div></pre></td></tr></table></figure>
-<p>交易的Meta信息结构体如下：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// TxLookupEntry is a positional metadata to help looking up the data content of</span></div><div class="line"><span class="comment">// a transaction or receipt given only its hash.</span></div><div class="line">    <span class="keyword">type</span> TxLookupEntry <span class="keyword">struct</span> &#123;</div><div class="line">        BlockHash  common.Hash</div><div class="line">        BlockIndex <span class="keyword">uint64</span></div><div class="line">        Index      <span class="keyword">uint64</span></div><div class="line">    &#125;</div></pre></td></tr></table></figure>
-<p>这里，meta信息会存储块的hash，块号和块上第几笔交易这些信息。<br>交易Meta存储是以交易hash加交易的Meta前缀为key，Meta的RLP编码为value。<br>交易写入数据库是通过WriteTxLookupEntries方法实现的。</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// WriteTxLookupEntries stores a positional metadata for every transaction from</span></div><div class="line"><span class="comment">// a block, enabling hash based transaction and receipt lookups.</span></div><div class="line">    <span class="function"><span class="keyword">func</span> <span class="title">WriteTxLookupEntries</span><span class="params">(db ethdb.Putter, block *types.Block)</span> <span class="title">error</span></span> &#123;</div><div class="line">        <span class="comment">// Iterate over each transaction and encode its metadata</span></div><div class="line">        <span class="keyword">for</span> i, tx := <span class="keyword">range</span> block.Transactions() &#123;</div><div class="line">            entry := TxLookupEntry&#123;</div><div class="line">                BlockHash:  block.Hash(),</div><div class="line">                BlockIndex: block.NumberU64(),</div><div class="line">                Index:      <span class="keyword">uint64</span>(i),</div><div class="line">            &#125;</div><div class="line">            data, err := rlp.EncodeToBytes(entry)</div><div class="line">            <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</div><div class="line">                <span class="keyword">return</span> err</div><div class="line">            &#125;</div><div class="line">            <span class="keyword">if</span> err := db.Put(<span class="built_in">append</span>(lookupPrefix, tx.Hash().Bytes()...), data); err != <span class="literal">nil</span> &#123;</div><div class="line">                <span class="keyword">return</span> err</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">        <span class="keyword">return</span> <span class="literal">nil</span></div><div class="line">    &#125;</div></pre></td></tr></table></figure>
-<p>这里，在将交易meta入库时，会遍历块上的所有交易，并构造交易的meta信息，进行RLP编码。然后以交易hash为key，meta为value进行存储。<br>这样就将一笔交易写入数据库中。<br>从数据库中读取交易信息时通过GetTransaction方法获得的。</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// GetTransaction retrieves a specific transaction from the database, along with</span></div><div class="line"><span class="comment">// its added positional metadata.</span></div><div class="line">    <span class="function"><span class="keyword">func</span> <span class="title">GetTransaction</span><span class="params">(db DatabaseReader, hash common.Hash)</span> <span class="params">(*types.Transaction, common.Hash, <span class="keyword">uint64</span>, <span class="keyword">uint64</span>)</span></span> &#123;</div><div class="line">        <span class="comment">// Retrieve the lookup metadata and resolve the transaction from the body</span></div><div class="line">        blockHash, blockNumber, txIndex := GetTxLookupEntry(db, hash)</div><div class="line">    </div><div class="line">        <span class="keyword">if</span> blockHash != (common.Hash&#123;&#125;) &#123;</div><div class="line">            body := GetBody(db, blockHash, blockNumber)</div><div class="line">            <span class="keyword">if</span> body == <span class="literal">nil</span> || <span class="built_in">len</span>(body.Transactions) &lt;= <span class="keyword">int</span>(txIndex) &#123;</div><div class="line">                log.Error(<span class="string">"Transaction referenced missing"</span>, <span class="string">"number"</span>, blockNumber, <span class="string">"hash"</span>, blockHash, <span class="string">"index"</span>, txIndex)</div><div class="line">                <span class="keyword">return</span> <span class="literal">nil</span>, common.Hash&#123;&#125;, <span class="number">0</span>, <span class="number">0</span></div><div class="line">            &#125;</div><div class="line">            <span class="keyword">return</span> body.Transactions[txIndex], blockHash, blockNumber, txIndex</div><div class="line">        &#125;</div><div class="line">        <span class="comment">// Old transaction representation, load the transaction and it's metadata separately</span></div><div class="line">        data, _ := db.Get(hash.Bytes())</div><div class="line">        <span class="keyword">if</span> <span class="built_in">len</span>(data) == <span class="number">0</span> &#123;</div><div class="line">            <span class="keyword">return</span> <span class="literal">nil</span>, common.Hash&#123;&#125;, <span class="number">0</span>, <span class="number">0</span></div><div class="line">        &#125;</div><div class="line">        <span class="keyword">var</span> tx types.Transaction</div><div class="line">        <span class="keyword">if</span> err := rlp.DecodeBytes(data, &amp;tx); err != <span class="literal">nil</span> &#123;</div><div class="line">            <span class="keyword">return</span> <span class="literal">nil</span>, common.Hash&#123;&#125;, <span class="number">0</span>, <span class="number">0</span></div><div class="line">        &#125;</div><div class="line">        <span class="comment">// Retrieve the blockchain positional metadata</span></div><div class="line">        data, _ = db.Get(<span class="built_in">append</span>(hash.Bytes(), oldTxMetaSuffix...))</div><div class="line">        <span class="keyword">if</span> <span class="built_in">len</span>(data) == <span class="number">0</span> &#123;</div><div class="line">            <span class="keyword">return</span> <span class="literal">nil</span>, common.Hash&#123;&#125;, <span class="number">0</span>, <span class="number">0</span></div><div class="line">        &#125;</div><div class="line">        <span class="keyword">var</span> entry TxLookupEntry</div><div class="line">        <span class="keyword">if</span> err := rlp.DecodeBytes(data, &amp;entry); err != <span class="literal">nil</span> &#123;</div><div class="line">            <span class="keyword">return</span> <span class="literal">nil</span>, common.Hash&#123;&#125;, <span class="number">0</span>, <span class="number">0</span></div><div class="line">        &#125;</div><div class="line">        <span class="keyword">return</span> &amp;tx, entry.BlockHash, entry.BlockIndex, entry.Index</div><div class="line">    &#125;</div></pre></td></tr></table></figure>
-<p>这个方法会首先通过交易hash从数据库中获取交易的meta信息，包括交易所在块的hash，块号和第几笔交易。<br>接下来使用块号和块hash获取从数据库中读取块的信息。<br>然后根据第几笔交易从块上获取交易的具体信息。<br>这里以太坊将交易的存储换成了新的存储方式，即交易的具体信息存储在块上，交易hash只对应交易的meta信息，并不包含交易的具体信息。<br>而以前的交易存储则是需要存储交易的具体信息和meta信息。<br>因此GetTransaction方法会支持原有的数据存储方式。</p>
-
+        <h2 id="区块存储"><a href="#区块存储" class="headerlink" title="区块存储"></a>区块存储</h2><h3 id="区块-Block-是以太坊的核心数据结构之一，Block包含Header和Body两部分。区块的存储是由leveldb完成的，leveldb的数据是以键值对存储的。"><a href="#区块-Block-是以太坊的核心数据结构之一，Block包含Header和Body两部分。区块的存储是由leveldb完成的，leveldb的数据是以键值对存储的。" class="headerlink" title="区块(Block)是以太坊的核心数据结构之一，Block包含Header和Body两部分。区块的存储是由leveldb完成的，leveldb的数据是以键值对存储的。"></a>区块(Block)是以太坊的核心数据结构之一，Block包含Header和Body两部分。区块的存储是由leveldb完成的，leveldb的数据是以键值对存储的。</h3>
       
     </div>
+    
+    <footer>
+      <div class="alignleft">
+        <a href="/2018/03/16/the-store-of-block/#more" class="more-link">更多内容</a>
+      </div>
+    </footer>
     
     <footer>
         <div class="alignright">
@@ -152,314 +131,15 @@
     </header>
     <div class="entry">
       
-        <h1 id="Merkle-Patricia-Tree-梅克尔帕特里夏树-详解"><a href="#Merkle-Patricia-Tree-梅克尔帕特里夏树-详解" class="headerlink" title="Merkle Patricia Tree (梅克尔帕特里夏树) 详解"></a>Merkle Patricia Tree (梅克尔帕特里夏树) 详解</h1><h3 id="1-前言"><a href="#1-前言" class="headerlink" title="1. 前言"></a><strong>1. 前言</strong></h3><h4 id="1-1-概述"><a href="#1-1-概述" class="headerlink" title="1.1 概述"></a><strong>1.1 概述</strong></h4><p>Merkle Patricia Tree（又称为Merkle Patricia Trie）是一种经过改良的、融合了默克尔树和前缀树两种树结构优点的数据结构，是以太坊中用来组织管理账户数据、生成交易集合哈希的重要数据结构。</p>
-<p>MPT树有以下几个作用：</p>
-<ul>
-<li>存储任意长度的key-value键值对数据；</li>
-<li>提供了一种快速计算所维护数据集哈希标识的机制；</li>
-<li>提供了快速状态回滚的机制；</li>
-<li>提供了一种称为<strong>默克尔证明</strong>的证明方法，进行轻节点的扩展，实现简单支付验证；</li>
-</ul>
-<p>由于MPT结合了（1）前缀树（2）默克尔树两种树结构的特点与优势 ，因此在介绍MPT之前，我们首先简要地介绍下这两种树结构的特点。</p>
-<h4 id="1-2-前缀树"><a href="#1-2-前缀树" class="headerlink" title="1.2 前缀树"></a><strong>1.2 前缀树</strong></h4><p>前缀树（又称字典树），用于保存关联数组，其键（key）的内容通常为字符串。前缀树节点在树中的位置是由其键的内容所决定的，即前缀树的key值被编码在根节点到该节点的路径中。</p>
-<p>如下图所示，图中共有6个叶子节点，其key的值分别为（1）tc（2）tea（3）ted（4）ten（5）Ab（6）il。</p>
-<p><img src="./images/trie.png" alt="trie"></p>
-<p><strong>优势</strong>：</p>
-<p>相比于哈希表，使用前缀树来进行查询拥有共同前缀key的数据时十分高效，例如在字典中查找前缀为pre的单词，对于哈希表来说，需要遍历整个表，时间效率为O(n)；然而对于前缀树来说，只需要在树中找到前缀为pre的节点，且遍历以这个节点为根节点的子树即可。</p>
-<p>但是对于最差的情况（前缀为空串），时间效率为O(n)，仍然需要遍历整棵树，此时效率与哈希表相同。</p>
-<p>相比于哈希表，在前缀树不会存在哈希冲突的问题。</p>
-<p><strong>劣势</strong>：</p>
-<ul>
-<li>直接查找效率低下</li>
-</ul>
-<p>前缀树的查找效率是O(m)，m为所查找节点的key长度，而哈希表的查找效率为O(1)。且一次查找会有m次IO开销，相比于直接查找，无论是速率、还是对磁盘的压力都比较大。</p>
-<ul>
-<li>可能会造成空间浪费</li>
-</ul>
-<p>当存在一个节点，其key值内容很长（如一串很长的字符串），当树中没有与他相同前缀的分支时，为了存储该节点，需要创建许多非叶子节点来构建根节点到该节点间的路径，造成了存储空间的浪费。</p>
-<h4 id="1-3-默克尔树"><a href="#1-3-默克尔树" class="headerlink" title="1.3 默克尔树"></a><strong>1.3 默克尔树</strong></h4><p>Merkle树是由计算机科学家 Ralph Merkle 在很多年前提出的，并以他本人的名字来命名,由于在比特币网络中用到了这种数据结构来进行数据正确性的验证，在这里简要地介绍一下merkle树的特点及原理。</p>
-<p>在比特币网络中，merkle树被用来归纳一个区块中的所有交易，同时生成整个交易集合的数字指纹。此外，由于merkle树的存在，使得在比特币这种公链的场景下，扩展一种“轻节点”实现简单支付验证变成可能，关于轻节点的内容，将会下文详述。</p>
-<p><strong>特点</strong></p>
-<ul>
-<li>默克尔树是一种树，大多数是二叉树，也可以多叉树，无论是几叉树，它都具有树结构的所有特点；</li>
-<li>默克尔树叶子节点的value是数据项的内容，或者是数据项的哈希值；</li>
-<li>非叶子节点的value根据其孩子节点的信息，然后按照Hash算法计算而得出的；</li>
-</ul>
-<p><strong>原理</strong></p>
-<p>在比特币网络中，merkle树是自底向上构建的。在下图的例子中，首先将L1-L4四个单元数据哈希化，然后将哈希值存储至相应的叶子节点。这些节点是Hash0-0, Hash0-1, Hash1-0, Hash1-1</p>
-<p><img src="./images/merkle.png" alt="merkle"></p>
-<p>将相邻两个节点的哈希值合并成一个字符串，然后计算这个字符串的哈希，得到的就是这两个节点的父节点的哈希值。</p>
-<p>如果该层的树节点个数是单数，那么对于最后剩下的树节点，这种情况就直接对它进行哈希运算，其父节点的哈希就是其哈希值的哈希值（对于单数个叶子节点，有着不同的处理方法，也可以采用复制最后一个叶子节点凑齐偶数个叶子节点的方式）。循环重复上述计算过程，最后计算得到最后一个节点的哈希值，将该节点的哈希值作为整棵树的哈希。</p>
-<p>若两棵树的根哈希一致，则这两棵树的结构、节点的内容必然相同。</p>
-<p>如上图所示，一棵有着4个叶子节点的树，计算代表整棵树的哈希需要经过7次计算，若采用将这四个叶子节点拼接成一个字符串进行计算，仅仅只需要一次哈希就可以实现，那么为什么要采用这种看似奇怪的方式呢？</p>
-<p><strong>优势</strong>：</p>
-<ul>
-<li>快速重哈希</li>
-</ul>
-<p>默克尔树的特点之一就是当树节点内容发生变化时，能够在前一次哈希计算的基础上，仅仅将被修改的树节点进行哈希重计算，便能得到一个新的根哈希用来代表整棵树的状态。</p>
-<ul>
-<li>轻节点扩展</li>
-</ul>
-<p>采用默克尔树，可以在公链环境下扩展一种“轻节点”。轻节点的特点是对于每个区块，仅仅需要存储约80个字节大小的区块头数据，而不存储交易列表，回执列表等数据。然而通过轻节点，可以实现在<strong>非信任的公链环境中</strong>验证某一笔交易是否被收录在区块链账本的功能。这使得像比特币，以太坊这样的区块链能够运行在个人PC，智能手机等拥有小存储容量的终端上。</p>
-<p><strong>劣势</strong>：</p>
-<ul>
-<li>存储空间开销大</li>
-</ul>
-<h3 id="2-结构设计"><a href="#2-结构设计" class="headerlink" title="2. 结构设计"></a><strong>2. 结构设计</strong></h3><p>在这一小节，将详细地介绍MPT (梅克尔帕特里夏树) 树的结构设计，以及采用这种结构设计的用意、优化点。</p>
-<h4 id="2-1-节点分类"><a href="#2-1-节点分类" class="headerlink" title="2.1 节点分类"></a><strong>2.1 节点分类</strong></h4><p>如上文所述，尽管前缀树可以起到维护key-value数据的目的，但是其具有十分明显的局限性。无论是查询操作，还是对数据的增删改，不仅效率低下，且存储空间浪费严重。故，在以太坊中，为MPT树新增了几种不同类型的树节点，以尽量压缩整体的树高、降低操作的复杂度。</p>
-<p>MPT树中，树节点可以分为以下四类：</p>
-<ul>
-<li>空节点</li>
-<li>分支节点</li>
-<li>叶子节点</li>
-<li>扩展节点</li>
-</ul>
-<p><strong>空节点</strong></p>
-<p>空节点用来表示空串。</p>
-<p><strong>分支节点</strong></p>
-<p>分支节点用来表示MPT树中所有拥有超过1个孩子节点以上的非叶子节点， 其定义如下所示：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">type</span> fullNode <span class="keyword">struct</span> &#123;</div><div class="line">        Children [<span class="number">17</span>]node <span class="comment">// Actual trie node data to encode/decode (needs custom encoder)</span></div><div class="line">        flags    nodeFlag</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">// nodeFlag contains caching-related metadata about a node.</span></div><div class="line"><span class="keyword">type</span> nodeFlag <span class="keyword">struct</span> &#123;</div><div class="line">    hash  hashNode <span class="comment">// cached hash of the node (may be nil)</span></div><div class="line">    gen   <span class="keyword">uint16</span>   <span class="comment">// cache generation counter</span></div><div class="line">    dirty <span class="keyword">bool</span>     <span class="comment">// whether the node has changes that must be written to the database</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>与前缀树相同，MPT同样是把key-value数据项的key编码在树的路径中，但是key的每一个字节值的范围太大（[0-127]），因此在以太坊中，在进行树操作之前，首先会进行一个key编码的转换（下节会详述），将一个字节的高低四位内容分拆成两个字节存储。通过编码转换，<code>key&#39;</code>的每一位的值范围都在[0, 15]内。因此，一个分支节点的孩子至多只有16个。以太坊通过这种方式，减小了每个分支节点的容量，但是在一定程度上增加了树高。</p>
-<p>分支节点的孩子列表中，最后一个元素是用来存储自身的内容。</p>
-<p>此外，每个分支节点会有一个附带的字段<code>nodeFlag</code>，记录了一些辅助数据：</p>
-<ul>
-<li>节点哈希：若该字段不为空，则当需要进行哈希计算时，可以跳过计算过程而直接使用上次计算的结果（当节点变脏时，该字段被置空）；</li>
-<li>脏标志：当一个节点被修改时，该标志位被置为1；</li>
-<li>诞生标志：当该节点第一次被载入内存中（或被修改时），会被赋予一个计数值作为诞生标志，该标志会被作为节点驱除的依据，清除内存中“太老”的未被修改的节点，防止占用的内存空间过多；</li>
-</ul>
-<p><strong>叶子节点&amp;&amp;扩展节点</strong></p>
-<p>叶子节点与扩展节点的定义相似，如下所示：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">type</span> shortNode <span class="keyword">struct</span> &#123;</div><div class="line">        Key   []<span class="keyword">byte</span></div><div class="line">        Val   node</div><div class="line">        flags nodeFlag</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>其中关键的字段为：</p>
-<ul>
-<li>Key：用来存储<strong>属于该节点范围的key</strong>；</li>
-<li>Val：用来存储该节点的内容；</li>
-</ul>
-<p>其中<code>Key</code>是MPT树实现树高压缩的关键！</p>
-<p>如之前所提及的，前缀树中会出现严重的存储空间浪费的情况，如下图：</p>
-<p><img src="./images/bad_trie.jpg" alt="bad_trie"></p>
-<p>图中右侧有一长串节点，这些节点大部分只是充当非叶子节点，用来构建一条路径，目的只是为了存储该路径上的叶子节点。</p>
-<p>针对这种情况，MPT树对此进行了优化：当MPT试图插入一个节点，插入过程中发现目前没有与该节点Key拥有相同前缀的路径。此时MPT把<strong>剩余的Key</strong>存储在叶子／扩展节点的Key字段中，充当一个”Shortcut“。</p>
-<p>例如图中我们将红线所圈的节点称为node1, 将蓝线所圈的节点称为node2。node1与node2共享路径前缀t，但是node1在插入时，树中没有与oast有共同前缀的路径，<em>因此node1的key为oast</em>，实现了编码路径的压缩。</p>
-<p><img src="./images/shortcut.jpg" alt="shortcut"></p>
-<p>这种做法有以下几点优势：</p>
-<ul>
-<li>提高节点的查找效率，避免过多的磁盘访问；</li>
-<li>减少存储空间浪费，避免存储无用的节点；</li>
-</ul>
-<p>此外Val字段用来存储叶子／扩展节点的内容，对于叶子节点来说，该字段存储的是一个数据项的内容；而对于扩展节点来说，该字段可以是以下两种内容：</p>
-<ol>
-<li>Val字段存储的是其孩子节点在数据库中存储的索引值（其实该索引值也是孩子节点的哈希值）；</li>
-<li>Val字段存储的是其孩子节点的引用；</li>
-</ol>
-<blockquote>
-<p>为什么设计在扩展节点的Val字段有可能存储一串哈希值作为孩子节点的索引呢？</p>
-<p>在以太坊中，该哈希代表着另外一个节点在数据库中索引，即根据这个哈希值作为数据库中的索引，可以从数据库中读取出另外一个节点的内容。</p>
-<p>这种设计的目的是：</p>
-<p>（1）当整棵树被持久化到数据库中时，保持节点间的关联关系；</p>
-<p>（2）从数据库中读取节点时，尽量避免不必要的IO开销；</p>
-<p>在内存中，父节点与子节点之间关联关系可以通过引用、指针等编程手段实现，但是当树节点持久化到数据库是，父节点中会存储一个子节点在数据库中的索引值，以此保持关联关系。</p>
-<p>同样，从数据库中读取节点时，本着最小IO开销的原则，仅需要读取那些需要用到的节点数据即可，因此若目前该节点已经包含所需要查找的信息时，便无须将其子节点再读取出来；反之，则根据子节点的哈希索引递归读取子节点，直至读取到所需要的信息。</p>
-</blockquote>
-<p>由于叶子／扩展节点共享一套定义，那么怎么来区分Val字段存储的到底是一个数据项的内容，还是一串哈希索引呢？在以太坊中，通过在Key中加入特殊的标志来区分两种类型的节点。</p>
-<h4 id="2-2-key值编码"><a href="#2-2-key值编码" class="headerlink" title="2.2 key值编码"></a><strong>2.2 key值编码</strong></h4><p>在以太坊中，MPT树的key值共有三种不同的编码方式，以满足不同场景的不同需求，在这里对每一种进行介绍。</p>
-<p>三种编码方式分别为：</p>
-<ol>
-<li>Raw编码（原生的字符）；</li>
-<li>Hex编码（扩展的16进制编码）；</li>
-<li>Hex-Prefix编码（16进制前缀编码）；</li>
-</ol>
-<p><strong>Raw编码</strong></p>
-<p>Raw编码就是原生的key值，不做任何改变。这种编码方式的key，是MPT对外提供接口的默认编码方式。</p>
-<blockquote>
-<p>例如一条key为“cat”，value为“dog”的数据项，其Raw编码就是[‘c’, ‘a’, ‘t’]，换成ASCII表示方式就是[63, 61, 74]</p>
-</blockquote>
-<p><strong>Hex编码</strong></p>
-<p>在介绍分支节点的时候，我们介绍了，为了减少分支节点孩子的个数，需要将key的编码进行转换，将原key的高低四位分拆成两个字节进行存储。这种转换后的key的编码方式，就是Hex编码。</p>
-<p>从Raw编码向Hex编码的转换规则是：</p>
-<ul>
-<li>将Raw编码的每个字符，根据高4位低4位拆成两个字节；</li>
-<li>若该Key对应的节点存储的是真实的数据项内容（即该节点是叶子节点），则在末位添加一个ASCII值为16的字符作为终止标志符；</li>
-<li>若该key对应的节点存储的是另外一个节点的哈希索引（即该节点是扩展节点），则不加任何字符；</li>
-</ul>
-<blockquote>
-<p>key为“cat”, value为“dog”的数据项，其Hex编码为[3, 15, 3, 13, 4, 10, 16]</p>
-</blockquote>
-<p><em>Hex编码用于对内存中MPT树节点key进行编码</em></p>
-<p><strong>HP (Hex-Prefix)编码</strong></p>
-<p>在介绍叶子／扩展节点时，我们介绍了这两种节点定义是共享的，即便持久化到数据库中，存储的方式也是一致的。那么当节点加载到内存是，同样需要通过一种额外的机制来区分节点的类型。于是以太坊就提出了一种<strong>HP编码</strong>对存储在数据库中的叶子／扩展节点的key进行编码区分。在将这两类节点持久化到数据库之前，首先会对该节点的key做编码方式的转换，即<em>从Hex编码转换成HP编码</em>。</p>
-<p>HP编码的规则如下：</p>
-<ul>
-<li>若原key的末尾字节的值为16（即该节点是叶子节点），去掉该字节；</li>
-<li>在key之前增加一个半字节，其中最低位用来编码原本key长度的奇偶信息，key长度为奇数，则该位为1；低2位中编码一个特殊的终止标记符，若该节点为叶子节点，则该位为1；</li>
-<li>若原本key的长度为奇数，则在key之前再增加一个值为0x0的<strong>半字节</strong>；</li>
-<li>将原本key的内容作压缩，即将两个字符以高4位低4位进行划分，存储在一个字节中（Hex扩展的逆过程）；</li>
-</ul>
-<blockquote>
-<p>若Hex编码为[3, 15, 3, 13, 4, 10, 16]，则HP编码的值为[32, 63, 61, 74]</p>
-</blockquote>
-<p><em>HP编码用于对数据库中的树节点key进行编码</em></p>
-<p><strong>转换关系</strong></p>
-<p><img src="./images/conversion.png" alt="conversion"></p>
-<p>以上三种编码方式的转换关系为：</p>
-<ul>
-<li>Raw编码：原生的key编码，是MPT对外提供接口中使用的编码方式，当数据项被插入到树中时，Raw编码被转换成Hex编码；</li>
-<li>Hex编码：16进制扩展编码，用于对内存中树节点key进行编码，当树节点被持久化到数据库时，Hex编码被转换成HP编码；</li>
-<li>HP编码：16进制前缀编码，用于对数据库中树节点key进行编码，当树节点被加载到内存时，HP编码被转换成Hex编码；</li>
-</ul>
-<h4 id="2-3-安全的MPT"><a href="#2-3-安全的MPT" class="headerlink" title="2.3 安全的MPT"></a><strong>2.3 安全的MPT</strong></h4><p>以上介绍的MPT树，可以用来存储内容为任何长度的key-value数据项。倘若数据项的key长度没有限制时，当树中维护的数据量较大时，仍然会造成整棵树的深度变得越来越深，会造成以下影响：</p>
-<ul>
-<li>查询一个节点可能会需要许多次IO读取，效率低下；</li>
-<li>系统易遭受Dos攻击，攻击者可以通过在合约中存储特定的数据，“构造”一棵拥有一条很长路径的树，然后不断地调用<code>SLOAD</code>指令读取该树节点的内容，造成系统执行效率极度下降；</li>
-<li>所有的key其实是一种明文的形式进行存储；</li>
-</ul>
-<p>为了解决以上问题，在以太坊中对MPT再进行了一次封装，对数据项的key进行了一次哈希计算，因此最终作为参数传入到MPT接口的数据项其实是<code>(sha3(key), value)</code></p>
-<p><strong>优势</strong>：</p>
-<ul>
-<li>传入MPT接口的key是固定长度的（32字节），可以避免出现树中出现长度很长的路径；</li>
-</ul>
-<p><strong>劣势</strong>：</p>
-<ul>
-<li>每次树操作需要增加一次哈希计算；</li>
-<li>需要在数据库中存储额外的<code>sha3(key)</code>与<code>key</code>之间的对应关系；</li>
-</ul>
-<h3 id="3-基本操作"><a href="#3-基本操作" class="headerlink" title="3. 基本操作"></a><strong>3. 基本操作</strong></h3><p>介绍完MPT树的组成结构，在这一章将介绍MPT几种核心的基本操作。</p>
-<h4 id="3-1-Get"><a href="#3-1-Get" class="headerlink" title="3.1 Get"></a><strong>3.1 Get</strong></h4><p>一次Get操作的过程为：</p>
-<ol>
-<li><p>将需要查找Key的Raw编码转换成Hex编码，得到的内容称之为<em>搜索路径</em>；</p>
-</li>
-<li><p>从根节点开始搜寻与</p>
-<p>搜索路径</p>
-<p>内容一致的路径；</p>
-<ol>
-<li>若当前节点为叶子节点，存储的内容是数据项的内容，且<em>搜索路径的内容</em>与叶子节点的key一致，则表示找到该节点；反之则表示该节点在树中不存在。</li>
-<li>若当前节点为扩展节点，且存储的内容是哈希索引，则利用哈希索引从数据库中加载该节点，再将<em>搜索路径</em>作为参数，对新解析出来的节点递归地调用查找函数。</li>
-<li>若当前节点为扩展节点，存储的内容是另外一个节点的引用，且当前节点的key是<em>搜索路径</em>的前缀，则将<em>搜索路径</em>减去当前节点的key，将剩余的<em>搜索路径</em>作为参数，对其子节点递归地调用查找函数；若当前节点的key不是<em>搜索路径</em>的前缀，表示该节点在树中不存在。</li>
-<li>若当前节点为分支节点，若<em>搜索路径</em>为空，则返回分支节点的存储内容；反之利用<em>搜索路径</em>的第一个字节选择分支节点的孩子节点，将剩余的<em>搜索路径</em>作为参数递归地调用查找函数。</li>
-</ol>
-</li>
-</ol>
-<p><img src="./images/get.jpeg" alt="get"></p>
-<p>上图是一次查找key为”cat“节点的过程。</p>
-<ol>
-<li>将key”cat”转换成hex编码[3,15,3,13,4,10,T] （在末尾添加终止符是因为需要查找一个真实的数据项内容）；</li>
-<li>当前节点是根节点，且是扩展节点，其key为3,15，则递归地对其子节点进行查找调用，剩余的搜索路径为[3,13,4,10,T];</li>
-<li>当前节点是分支节点，以搜索路径的第一个字节内容3选择第4个孩子节点递归进行查找，剩余的搜索路径为[13,4,10,T]；</li>
-<li>当前节点是叶子节点，且key与剩余的搜索路径一致，表示找到了该节点，返回Val为“dog”；</li>
-</ol>
-<h4 id="3-2-Insert"><a href="#3-2-Insert" class="headerlink" title="3.2 Insert"></a><strong>3.2 Insert</strong></h4><p>插入操作也是基于查找过程完成的，一个插入过程为：</p>
-<ol>
-<li>根据3.1中描述的查找步骤，首先找到与新插入节点拥有<strong>最长相同路径前缀</strong>的节点，记为Node；</li>
-<li>若该Node为分支节点：<ol>
-<li>剩余的搜索路径不为空，则将新节点作为一个叶子节点插入到对应的孩子列表中；</li>
-<li>剩余的搜索路径为空（完全匹配），则将新节点的内容存储在分支节点的第17个孩子节点项中（Value）；</li>
-</ol>
-</li>
-<li>若该节点为叶子／扩展节点：<ol>
-<li>剩余的搜索路径与当前节点的key一致，则把当前节点Val更新即可；</li>
-<li>剩余的搜索路径与当前节点的key不完全一致，则将<strong>叶子／扩展节点的孩子节点替换成分支节点</strong>，将新节点与当前节点key的共同前缀作为当前节点的key，将新节点与当前节点的孩子节点作为两个孩子插入到分支节点的孩子列表中，同时当前节点转换成了一个扩展节点（若新节点与当前节点没有共同前缀，则直接用生成的分支节点替换当前节点）；</li>
-</ol>
-</li>
-<li>若插入成功，则将被修改节点的dirty标志置为true，hash标志置空（之前的结果已经不可能用），且将节点的诞生标记更新为<em>现在</em>；</li>
-</ol>
-<p><img src="./images/insert.jpeg" alt="insert"></p>
-<p>上图是一次将key为“cau”, value为“dog1”节点插入的过程。</p>
-<ol>
-<li>将key”cau”转换成hex编码[3,15,3,13,4,11,T] ；</li>
-<li>通过查找算法，找到左图蓝线圈出的节点node1，且拥有与新插入节点最长的共同前缀[3,15,3,13,4]；</li>
-<li>新增一个分支节点node2，将node1的val与新节点作为孩子插入到node2的孩子列表中，将node1的val替换成node2；</li>
-<li>node1变成了一个扩展节点；</li>
-</ol>
-<h4 id="3-3-Delete"><a href="#3-3-Delete" class="headerlink" title="3.3 Delete"></a><strong>3.3 Delete</strong></h4><p>删除操作与插入操作类似，都需要借助查找过程完成，一次删除过程为：</p>
-<ol>
-<li>根据3.1中描述的查找步骤，找到与需要插入的节点拥有<strong>最长相同路径前缀</strong>的节点，记为Node；</li>
-<li>若Node为叶子／扩展节点：<ol>
-<li>若剩余的搜索路径与node的Key完全一致，则将整个node删除；</li>
-<li>若剩余的搜索路径与node的key不匹配，则表示需要删除的节点不存于树中，删除失败；</li>
-<li>若node的key是剩余搜索路径的前缀，则对该节点的Val做递归的删除调用；</li>
-</ol>
-</li>
-<li>若Node为分支节点：<ol>
-<li>删除孩子列表中相应下标标志的节点；</li>
-<li>删除结束，若Node的孩子个数只剩下一个，那么将分支节点替换成一个叶子／扩展节点；</li>
-</ol>
-</li>
-<li>若删除成功，则将被修改节点的dirty标志置为true，hash标志置空（之前的结果已经不可能用），且将节点的诞生标记更新为<em>现在</em>；</li>
-</ol>
-<p><img src="./images/delete_1.jpeg" alt="delete_1"></p>
-<p><img src="./images/delete_2.jpeg" alt="delete_2"></p>
-<p>上面两幅图是一次将key为“cat”, value为“dog1”节点删除的过程。</p>
-<ol>
-<li>将key”cau”转换成hex编码[3,15,3,13,4,11,T] ；</li>
-<li>通过查找算法，找到用叉表示的节点node1，从根节点到node1的路径与搜索路径完全一致；</li>
-<li>从node1的父节点中删除该节点，父节点仅剩一个孩子节点，故将父节点转换成一个叶子节点；</li>
-<li>新生成的叶子节点又与其父节点（扩展节点）发生了合并，最终生成了一个叶子节点包含了所有的信息（图2）；</li>
-</ol>
-<h4 id="3-4-Update"><a href="#3-4-Update" class="headerlink" title="3.4 Update"></a><strong>3.4 Update</strong></h4><p>更新操作就是3.2Insert与3.3Delete的结合。当用户调用Update函数时，若value不为空，则隐式地转为调用Insert；若value为空，则隐式地转为调用Delete，故在此不再赘述。</p>
-<p>####3.5 Commit</p>
-<p>Commit函数提供将<em>内存</em>中的MPT数据持久化到<em>数据库</em>的功能。在第一章中我们提到的MPT具有<em>快速计算所维护数据集哈希标识</em>以<em>快速状态回滚</em>的能力，也都是在该函数中实现的。</p>
-<p>在commit完成后，所有<strong>变脏</strong>的树节点会重新进行哈希计算，并且将新内容写入数据库；最终新的根节点哈希将被作为MPT的最新状态被返回。</p>
-<p>一次MPT树提交是一个递归调用的过程，在介绍MPT提交过程之前，我们首先介绍单个节点是如何进行哈希计算和存储的。</p>
-<p><strong>单节点</strong></p>
-<ol>
-<li><p>首先是对该节点进行脏位的判断，若当前节点未被修改，则直接返回该节点的哈希值，调用结束（此外，若当前节点既未被修改，同时存在于内存的时间又”过长“，则将以该节点为根节点的子树从内存中驱除）；</p>
-</li>
-<li><p>该节点为脏节点，对该节点进行哈希重计算。首先是对当前节点的孩子节点进行哈希计算，对孩子节点的哈希计算是利用递归地对节点进行处理完成。这一步骤的目的是<strong>将孩子节点的信息各自转换成一个哈希值进行表示</strong>；。</p>
-</li>
-<li><p>对当前节点进行哈希计算。哈希计算利用sha256哈希算法对当前节点的</p>
-<p><em>RLP编码</em></p>
-<p>进行哈希计算；</p>
-<ol>
-<li>对于分支节点来说，该节点的RLP编码就是对其孩子列表的内容进行编码，且在第二步中，所有的孩子节点所有已经被转换成了一个哈希值；</li>
-<li>对于叶子／扩展节点来说，该节点的RLP编码就是对其Key，Value字段进行编码。同样在第二步中，若Value指代的是另外一个节点的引用，则已经被转换成了一个哈希值（在第二步中，Key已经被转换成了HP编码）；</li>
-</ol>
-</li>
-<li><p>将当前节点的数据存入数据库，存储的格式为[节点哈希值，节点的RLP编码]。</p>
-</li>
-<li><p>将自身的dirty标志置为false，并将计算所得的哈希值进行缓存；</p>
-</li>
-</ol>
-<p><strong>MPT树的提交过程</strong></p>
-<p>在理解单节点的提交过程后，MPT树的提交过程就是以根节点为入口，对根节点进行提交调用即可。</p>
-<p><img src="http://upyun-assets.ethfans.org/uploads/photo/image/6be30274b9944d13854f54daa2351746.jpeg" alt="img"></p>
-<p>上图展示一棵MPT被持久化的过程：</p>
-<p>左下角的叶子节点计算得到哈希为0xaa，将其存入数据库中，并在其父节点中用哈希值进行替换；粉色的扩展节点计算得到哈希为0xcc，在父节点用中0xcc进行替换；递归至根节点，计算得到根节点的哈希为0xee，即整棵树的哈希为0xee。</p>
-<p><strong>节点过老的判断依据</strong></p>
-<blockquote>
-<p>判断一个节点在内存中存在时间是否过长的依据是：</p>
-<ol>
-<li>该节点未被修改；</li>
-<li>当前MPT的计数器减去节点的诞生标志超过了固定的上限；</li>
-<li>每当MPT调用一次Commit函数，MPT的计数器发生自增；</li>
-</ol>
-</blockquote>
-<p><strong>实现功能</strong></p>
-<p>1.快速计算所维护数据集哈希标识</p>
-<p>这个特点体现在单节点计算的第一步，即在节点哈希计算之前会对该节点的状态进行判断，只有当该节点的内容变脏，才会进行哈希重计算、数据库持久化等操作。如此一来，在某一次事务操作中，对整棵MPT树的部分节点的内容产生了修改，那么一次哈希重计算，仅需对这些被修改的节点、以及从这些节点到根节点路径上的节点进行重计算，便能重新获得整棵树的新哈希。</p>
-<p>2.快速状态回滚</p>
-<p>在公链的环境下，采用POW算法是可能会造成分叉而导致区块链状态进行回滚的。在以太坊中，由于出块时间短，这种分叉的几率很大，区块链状态回滚的现象很频繁。</p>
-<p>所谓的状态回滚指的是：（1）区块链内容发生了重组织，链头发生切换（2）区块链的世界状态（账户信息）需要进行回滚，即对之前的操作进行撤销。</p>
-<p>MPT树就提供了一种机制，可以当区块碰撞发生了，零延迟地完成世界状态的回滚。这种优势的代价就是需要浪费存储空间去冗余地存储每个节点的历史状态。</p>
-<p><strong>每个节点在数据库中的存储都是值驱动的</strong>。当一个节点的内容发生了变化，其哈希相应改变，而MPT将哈希作为数据库中的索引，也就实现了对于<strong>每一个值</strong>，在数据库中都有一条<strong>确定的记录</strong>。而MPT是根据节点哈希来关联父子节点的，因此每当一个节点的内容发生变化，最终对于父节点来说，改变的只是一个哈希索引值；父节点的内容也由此改变，产生了一个新的父节点，递归地将这种影响传递到根节点。<strong>最终，一次改变对应创建了一条从被改节点到根节点的新路径，而旧节点依然可以根据旧根节点通过旧路径访问得到</strong>。</p>
-<p>示例：</p>
-<p><img src="http://upyun-assets.ethfans.org/uploads/photo/image/4e252f20afd44b5c8ffd6890417ce690.jpeg" alt="img"></p>
-<p>在上图中，一个节点的内容由27变为45，就对应成创建了一条由蓝线圈出的新路径，通过复用绿线圈出的未修改节点信息，构造一棵新树，而旧路径依旧保留。故通过旧stateRoot，我们依旧能够查询到该节点的值为27。</p>
-<p>所以，在以太坊中，发生分叉而进行世界状态回滚时，仅需要用旧的MPT根节点作为入口，即可完成“状态回滚”。</p>
-<h3 id="4-轻节点扩展"><a href="#4-轻节点扩展" class="headerlink" title="4. 轻节点扩展"></a><strong>4. 轻节点扩展</strong></h3><p>接下来来介绍一个默克尔树，MPT能够提供的一个重要功能 - 默克尔证明，使用默克尔证明能够实现轻节点的扩展。</p>
-<h4 id="4-1-什么是轻节点"><a href="#4-1-什么是轻节点" class="headerlink" title="4.1 什么是轻节点"></a><strong>4.1 什么是轻节点</strong></h4><p>在以太坊或比特币中，一个参与共识的全节点通常会维护整个区块链的数据，每个区块中的区块头信息，所有的交易，回执信息等。由于区块链的不可篡改性，这将导致随着时间的增加，整个区块链的数据体量会非常庞大。运行在个人PC或者移动终端的可能性显得微乎其微。为了解决这个问题，一种轻量级的，<strong>只存储区块头部信息</strong>的节点被提出。这种节点只需要维护链中所有的区块头信息（一个区块头的大小通常为几十个字节，普通的移动终端设备完全能够承受出）。</p>
-<p>在公链的环境下，<strong>仅仅通过本地所维护的区块头信息</strong>，轻节点就能够证明某一笔交易是否存在与区块链中；某一个账户是否存在与区块链中，其余额是多少等功能。</p>
-<h4 id="4-2-什么是默克尔证明"><a href="#4-2-什么是默克尔证明" class="headerlink" title="4.2 什么是默克尔证明"></a><strong>4.2 什么是默克尔证明</strong></h4><p>默克尔证明指一个轻节点向一个全节点发起一次证明请求，询问全节点完整的默克尔树中，是否存在一个指定的节点；全节点向轻节点返回一个默克尔证明路径，由轻节点进行计算，验证存在性。</p>
-<h4 id="4-3-默克尔证明过程"><a href="#4-3-默克尔证明过程" class="headerlink" title="4.3 默克尔证明过程"></a><strong>4.3 默克尔证明过程</strong></h4><p>如有棵如下图所示的merkle树，如果某个轻节点想要验证<code>9Dog:64</code>这个树节点是否存在与默克尔树中，只需要向全节点发送该请求，全节点会返回一个<code>1FXq:18</code>, <code>ec20</code>,<br><code>8f74</code>的一个路径（默克尔路径，如图2黄色框所表示的）。得到路径之后，轻节点利用<code>9Dog:64</code>与<code>1FXq:18</code>求哈希，在与<code>ec20</code>求哈希，最后与<code>8f74</code>求哈希，得到的结果与本地维护的根哈希相比，是否相等。</p>
-<p><img src="http://upyun-assets.ethfans.org/uploads/photo/image/362f6e0cac7d4a50b06bd95f7e6d1cfc.jpeg" alt="img"></p>
-<p><img src="http://upyun-assets.ethfans.org/uploads/photo/image/5409681f672c465db8b49ee4ac6f4dd0.jpeg" alt="img"></p>
-<h4 id="4-4默克尔证明安全性"><a href="#4-4默克尔证明安全性" class="headerlink" title="4.4默克尔证明安全性"></a><strong>4.4默克尔证明安全性</strong></h4><p>（1）若全节点返回的是一条恶意的路径？试图为一个不存在于区块链中的节点伪造一条合法的merkle路径，使得最终的计算结果与区块头中的默克尔根哈希相同。</p>
-<p>由于哈希的计算具有不可预测性，使得一个恶意的“全”节点想要为一条不存在的节点伪造一条“伪路径”使得最终计算的根哈希与轻节点所维护的根哈希相同是不可能的。</p>
-<p>（2）为什么不直接向全节点请求该节点是否存在于区块链中？</p>
-<p>由于在公链的环境中，无法判断请求的全节点是否为恶意节点，因此直接向某一个或者多个全节点请求得到的结果是无法得到保证的。但是轻节点本地维护的区块头信息，是经过工作量证明验证的，也就是经过共识一定正确的，若利用全节点提供的默克尔路径，与代验证的节点进行哈希计算，若最终结果与本地维护的区块头中根哈希一致，则能够证明该节点一定存在于默克尔树中。</p>
-<h4 id="4-5-简单支付验证"><a href="#4-5-简单支付验证" class="headerlink" title="4.5 简单支付验证"></a><strong>4.5 简单支付验证</strong></h4><p>在以太坊中，利用默克尔证明在轻节点中实现简单支付验证，即在无需维护具体交易信息的前提下，证明某一笔交易是否存在于区块链中。</p>
-
+        <h1 id="Merkle-Patricia-Tree-梅克尔帕特里夏树-详解"><a href="#Merkle-Patricia-Tree-梅克尔帕特里夏树-详解" class="headerlink" title="Merkle Patricia Tree (梅克尔帕特里夏树) 详解"></a>Merkle Patricia Tree (梅克尔帕特里夏树) 详解</h1><h3 id="1-前言"><a href="#1-前言" class="headerlink" title="1. 前言"></a><strong>1. 前言</strong></h3><h4 id="1-1-概述"><a href="#1-1-概述" class="headerlink" title="1.1 概述"></a><strong>1.1 概述</strong></h4><p>Merkle Patricia Tree（又称为Merkle Patricia Trie）是一种经过改良的、融合了默克尔树和前缀树两种树结构优点的数据结构，是以太坊中用来组织管理账户数据、生成交易集合哈希的重要数据结构。<br></p>
       
     </div>
+    
+    <footer>
+      <div class="alignleft">
+        <a href="/2018/03/14/merkle-patricia-tree/#more" class="more-link">更多内容</a>
+      </div>
+    </footer>
     
     <footer>
         <div class="alignright">
@@ -504,7 +184,7 @@
     </header>
     <div class="entry">
       
-        <p>整理了一些网络学习中易混淆的名词。<br>
+        <p>整理了一些网络学习中易混淆的名词。<br></p>
       
     </div>
     
@@ -769,7 +449,7 @@
     </header>
     <div class="entry">
       
-        <p>bufio包实现了有缓冲的I/O。它包装一个io.Reader或io.Writer接口对象，创建另一个也实现了该接口，且同时还提供了缓冲和一些文本I/O的帮助函数的对象。<br>
+        <p>bufio包实现了有缓冲的I/O。它包装一个io.Reader或io.Writer接口对象，创建另一个也实现了该接口，且同时还提供了缓冲和一些文本I/O的帮助函数的对象。<br></p>
       
     </div>
     

@@ -77,8 +77,7 @@
     </header>
     <div class="entry">
       
-        <h1 id="Merkle-Patricia-Tree-梅克尔帕特里夏树-详解"><a href="#Merkle-Patricia-Tree-梅克尔帕特里夏树-详解" class="headerlink" title="Merkle Patricia Tree (梅克尔帕特里夏树) 详解"></a>Merkle Patricia Tree (梅克尔帕特里夏树) 详解</h1><h3 id="1-前言"><a href="#1-前言" class="headerlink" title="1. 前言"></a><strong>1. 前言</strong></h3><h4 id="1-1-概述"><a href="#1-1-概述" class="headerlink" title="1.1 概述"></a><strong>1.1 概述</strong></h4><p>Merkle Patricia Tree（又称为Merkle Patricia Trie）是一种经过改良的、融合了默克尔树和前缀树两种树结构优点的数据结构，是以太坊中用来组织管理账户数据、生成交易集合哈希的重要数据结构。</p>
-<p>MPT树有以下几个作用：</p>
+        <h1 id="Merkle-Patricia-Tree-梅克尔帕特里夏树-详解"><a href="#Merkle-Patricia-Tree-梅克尔帕特里夏树-详解" class="headerlink" title="Merkle Patricia Tree (梅克尔帕特里夏树) 详解"></a>Merkle Patricia Tree (梅克尔帕特里夏树) 详解</h1><h3 id="1-前言"><a href="#1-前言" class="headerlink" title="1. 前言"></a><strong>1. 前言</strong></h3><h4 id="1-1-概述"><a href="#1-1-概述" class="headerlink" title="1.1 概述"></a><strong>1.1 概述</strong></h4><p>Merkle Patricia Tree（又称为Merkle Patricia Trie）是一种经过改良的、融合了默克尔树和前缀树两种树结构优点的数据结构，是以太坊中用来组织管理账户数据、生成交易集合哈希的重要数据结构。<br><a id="more"></a><br>MPT树有以下几个作用：</p>
 <ul>
 <li>存储任意长度的key-value键值对数据；</li>
 <li>提供了一种快速计算所维护数据集哈希标识的机制；</li>
@@ -88,7 +87,7 @@
 <p>由于MPT结合了（1）前缀树（2）默克尔树两种树结构的特点与优势 ，因此在介绍MPT之前，我们首先简要地介绍下这两种树结构的特点。</p>
 <h4 id="1-2-前缀树"><a href="#1-2-前缀树" class="headerlink" title="1.2 前缀树"></a><strong>1.2 前缀树</strong></h4><p>前缀树（又称字典树），用于保存关联数组，其键（key）的内容通常为字符串。前缀树节点在树中的位置是由其键的内容所决定的，即前缀树的key值被编码在根节点到该节点的路径中。</p>
 <p>如下图所示，图中共有6个叶子节点，其key的值分别为（1）tc（2）tea（3）ted（4）ten（5）Ab（6）il。</p>
-<p><img src="./images/trie.png" alt="trie"></p>
+<p><img src="/2018/03/14/merkle-patricia-tree/trie.png" alt="trie"></p>
 <p><strong>优势</strong>：</p>
 <p>相比于哈希表，使用前缀树来进行查询拥有共同前缀key的数据时十分高效，例如在字典中查找前缀为pre的单词，对于哈希表来说，需要遍历整个表，时间效率为O(n)；然而对于前缀树来说，只需要在树中找到前缀为pre的节点，且遍历以这个节点为根节点的子树即可。</p>
 <p>但是对于最差的情况（前缀为空串），时间效率为O(n)，仍然需要遍历整棵树，此时效率与哈希表相同。</p>
@@ -112,7 +111,7 @@
 </ul>
 <p><strong>原理</strong></p>
 <p>在比特币网络中，merkle树是自底向上构建的。在下图的例子中，首先将L1-L4四个单元数据哈希化，然后将哈希值存储至相应的叶子节点。这些节点是Hash0-0, Hash0-1, Hash1-0, Hash1-1</p>
-<p><img src="./images/merkle.png" alt="merkle"></p>
+<p><img src="/2018/03/14/merkle-patricia-tree/merkle.png" alt="merkle"></p>
 <p>将相邻两个节点的哈希值合并成一个字符串，然后计算这个字符串的哈希，得到的就是这两个节点的父节点的哈希值。</p>
 <p>如果该层的树节点个数是单数，那么对于最后剩下的树节点，这种情况就直接对它进行哈希运算，其父节点的哈希就是其哈希值的哈希值（对于单数个叶子节点，有着不同的处理方法，也可以采用复制最后一个叶子节点凑齐偶数个叶子节点的方式）。循环重复上述计算过程，最后计算得到最后一个节点的哈希值，将该节点的哈希值作为整棵树的哈希。</p>
 <p>若两棵树的根哈希一致，则这两棵树的结构、节点的内容必然相同。</p>
@@ -162,11 +161,11 @@
 </ul>
 <p>其中<code>Key</code>是MPT树实现树高压缩的关键！</p>
 <p>如之前所提及的，前缀树中会出现严重的存储空间浪费的情况，如下图：</p>
-<p><img src="./images/bad_trie.jpg" alt="bad_trie"></p>
+<p><img src="/2018/03/14/merkle-patricia-tree/bad_trie.jpg" alt="bad_trie"></p>
 <p>图中右侧有一长串节点，这些节点大部分只是充当非叶子节点，用来构建一条路径，目的只是为了存储该路径上的叶子节点。</p>
 <p>针对这种情况，MPT树对此进行了优化：当MPT试图插入一个节点，插入过程中发现目前没有与该节点Key拥有相同前缀的路径。此时MPT把<strong>剩余的Key</strong>存储在叶子／扩展节点的Key字段中，充当一个”Shortcut“。</p>
 <p>例如图中我们将红线所圈的节点称为node1, 将蓝线所圈的节点称为node2。node1与node2共享路径前缀t，但是node1在插入时，树中没有与oast有共同前缀的路径，<em>因此node1的key为oast</em>，实现了编码路径的压缩。</p>
-<p><img src="./images/shortcut.jpg" alt="shortcut"></p>
+<p><img src="/2018/03/14/merkle-patricia-tree/shortcut.jpg" alt="shortcut"></p>
 <p>这种做法有以下几点优势：</p>
 <ul>
 <li>提高节点的查找效率，避免过多的磁盘访问；</li>
@@ -225,7 +224,7 @@
 </blockquote>
 <p><em>HP编码用于对数据库中的树节点key进行编码</em></p>
 <p><strong>转换关系</strong></p>
-<p><img src="./images/conversion.png" alt="conversion"></p>
+<p><img src="/2018/03/14/merkle-patricia-tree/conversion.png" alt="conversion"></p>
 <p>以上三种编码方式的转换关系为：</p>
 <ul>
 <li>Raw编码：原生的key编码，是MPT对外提供接口中使用的编码方式，当数据项被插入到树中时，Raw编码被转换成Hex编码；</li>
@@ -260,11 +259,10 @@
 <li>若当前节点为叶子节点，存储的内容是数据项的内容，且<em>搜索路径的内容</em>与叶子节点的key一致，则表示找到该节点；反之则表示该节点在树中不存在。</li>
 <li>若当前节点为扩展节点，且存储的内容是哈希索引，则利用哈希索引从数据库中加载该节点，再将<em>搜索路径</em>作为参数，对新解析出来的节点递归地调用查找函数。</li>
 <li>若当前节点为扩展节点，存储的内容是另外一个节点的引用，且当前节点的key是<em>搜索路径</em>的前缀，则将<em>搜索路径</em>减去当前节点的key，将剩余的<em>搜索路径</em>作为参数，对其子节点递归地调用查找函数；若当前节点的key不是<em>搜索路径</em>的前缀，表示该节点在树中不存在。</li>
-<li>若当前节点为分支节点，若<em>搜索路径</em>为空，则返回分支节点的存储内容；反之利用<em>搜索路径</em>的第一个字节选择分支节点的孩子节点，将剩余的<em>搜索路径</em>作为参数递归地调用查找函数。</li>
+<li>若当前节点为分支节点，若<em>搜索路径</em>为空，则返回分支节点的存储内容；反之利用<em>搜索路径</em>的第一个字节选择分支节点的孩子节点，将剩余的<em>搜索路径</em>作为参数递归地调用查找函数。<br><a href="https://github.com/fengyfei/wizard/blob/master/blockchain/images/get.jpeg?raw=true" target="_blank" rel="external">https://github.com/fengyfei/wizard/blob/master/blockchain/images/get.jpeg?raw=true</a><br><img src="/2018/03/14/merkle-patricia-tree/get.jpeg" alt="get"></li>
 </ol>
 </li>
 </ol>
-<p><img src="./images/get.jpeg" alt="get"></p>
 <p>上图是一次查找key为”cat“节点的过程。</p>
 <ol>
 <li>将key”cat”转换成hex编码[3,15,3,13,4,10,T] （在末尾添加终止符是因为需要查找一个真实的数据项内容）；</li>
@@ -287,7 +285,7 @@
 </li>
 <li>若插入成功，则将被修改节点的dirty标志置为true，hash标志置空（之前的结果已经不可能用），且将节点的诞生标记更新为<em>现在</em>；</li>
 </ol>
-<p><img src="./images/insert.jpeg" alt="insert"></p>
+<p><img src="/2018/03/14/merkle-patricia-tree/insert.jpeg" alt="insert"></p>
 <p>上图是一次将key为“cau”, value为“dog1”节点插入的过程。</p>
 <ol>
 <li>将key”cau”转换成hex编码[3,15,3,13,4,11,T] ；</li>
@@ -311,8 +309,8 @@
 </li>
 <li>若删除成功，则将被修改节点的dirty标志置为true，hash标志置空（之前的结果已经不可能用），且将节点的诞生标记更新为<em>现在</em>；</li>
 </ol>
-<p><img src="./images/delete_1.jpeg" alt="delete_1"></p>
-<p><img src="./images/delete_2.jpeg" alt="delete_2"></p>
+<p><img src="/2018/03/14/merkle-patricia-tree/delete_1.jpeg" alt="delete_1"></p>
+<p><img src="/2018/03/14/merkle-patricia-tree/delete_2.jpeg" alt="delete_2"></p>
 <p>上面两幅图是一次将key为“cat”, value为“dog1”节点删除的过程。</p>
 <ol>
 <li>将key”cau”转换成hex编码[3,15,3,13,4,11,T] ；</li>
@@ -375,8 +373,8 @@
 <p>在公链的环境下，<strong>仅仅通过本地所维护的区块头信息</strong>，轻节点就能够证明某一笔交易是否存在与区块链中；某一个账户是否存在与区块链中，其余额是多少等功能。</p>
 <h4 id="4-2-什么是默克尔证明"><a href="#4-2-什么是默克尔证明" class="headerlink" title="4.2 什么是默克尔证明"></a><strong>4.2 什么是默克尔证明</strong></h4><p>默克尔证明指一个轻节点向一个全节点发起一次证明请求，询问全节点完整的默克尔树中，是否存在一个指定的节点；全节点向轻节点返回一个默克尔证明路径，由轻节点进行计算，验证存在性。</p>
 <h4 id="4-3-默克尔证明过程"><a href="#4-3-默克尔证明过程" class="headerlink" title="4.3 默克尔证明过程"></a><strong>4.3 默克尔证明过程</strong></h4><p>如有棵如下图所示的merkle树，如果某个轻节点想要验证<code>9Dog:64</code>这个树节点是否存在与默克尔树中，只需要向全节点发送该请求，全节点会返回一个<code>1FXq:18</code>, <code>ec20</code>,<br><code>8f74</code>的一个路径（默克尔路径，如图2黄色框所表示的）。得到路径之后，轻节点利用<code>9Dog:64</code>与<code>1FXq:18</code>求哈希，在与<code>ec20</code>求哈希，最后与<code>8f74</code>求哈希，得到的结果与本地维护的根哈希相比，是否相等。</p>
-<p><img src="http://upyun-assets.ethfans.org/uploads/photo/image/362f6e0cac7d4a50b06bd95f7e6d1cfc.jpeg" alt="img"></p>
-<p><img src="http://upyun-assets.ethfans.org/uploads/photo/image/5409681f672c465db8b49ee4ac6f4dd0.jpeg" alt="img"></p>
+<p><img src="http://upyun-assets.ethfans.org/uploads/photo/image/362f6e0cac7d4a50b06bd95f7e6d1cfc.jpeg?raw=true" alt="img"></p>
+<p><img src="http://upyun-assets.ethfans.org/uploads/photo/image/5409681f672c465db8b49ee4ac6f4dd0.jpeg?raw=true" alt="img"></p>
 <h4 id="4-4默克尔证明安全性"><a href="#4-4默克尔证明安全性" class="headerlink" title="4.4默克尔证明安全性"></a><strong>4.4默克尔证明安全性</strong></h4><p>（1）若全节点返回的是一条恶意的路径？试图为一个不存在于区块链中的节点伪造一条合法的merkle路径，使得最终的计算结果与区块头中的默克尔根哈希相同。</p>
 <p>由于哈希的计算具有不可预测性，使得一个恶意的“全”节点想要为一条不存在的节点伪造一条“伪路径”使得最终计算的根哈希与轻节点所维护的根哈希相同是不可能的。</p>
 <p>（2）为什么不直接向全节点请求该节点是否存在于区块链中？</p>
