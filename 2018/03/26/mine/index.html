@@ -1,0 +1,301 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8" />
+  
+  <title>mine | yangcl&#39;s</title>
+  <meta name="author" content="Yang Chenglong" />
+
+  
+  <meta name="description" content="Yangcl&#39;s Blog" />
+  
+
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+  <meta property="og:title" content="mine" />
+  <meta property="og:site_name" content="yangcl&#39;s" />
+
+  
+  
+
+  
+    <meta property="og:image" content="" />
+  
+
+  
+  <link href="/css/images/favicon.ico" rel="icon" />
+  
+
+  <link rel="alternate" href="/atom.xml" title="yangcl&#39;s" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+
+
+  <!-- baidu webmaster push -->
+  <script src='//push.zhanzhang.baidu.com/push.js'></script>
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">yangcl&#39;s</a></h1>
+  <h2><a href="/">悟已往之不谏，知来者之可追。</a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+      <li><a href="/atom.xml">RSS</a></li>
+    
+      <li><a href="https://github.com/yangchenglong11">github</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2018-03-26T09:16:21.000Z"><a href="/2018/03/26/mine/">2018-03-26</a></time>
+      
+      
+  
+    <h1 class="title">mine</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>前几篇分别介绍了以太坊的基本概念，基本环节-交易，区块、区块链的存储方式等，这篇打算介绍一下“挖矿“得到新区块的整个过程，然后下一篇讲下不同共识算法的实现细节。<br><a id="more"></a></p>
+<h2 id="总览"><a href="#总览" class="headerlink" title="总览"></a>总览</h2><p>在Ethereum 代码中，名为miner的包(package)负责向外提供一个“挖矿”得到的新区块，其主要结构体的UML关系图如下图所示：</p>
+<p><img src="/2018/03/26/mine/miner.png" alt="img"></p>
+<p>处于入口的类是Miner，它作为公共类型，向外暴露mine功能；它有一个worker类型的成员变量，负责管理mine过程；worker内部有一组Agent接口类型对象，这个接口有两个实现:CpuAgent和RemoteAgent。这里使用的是CpuAgent，该Agent会完成一个块的出块工作，同级的多个Agent是竞争关系，最终通过共识算法完成出一个块的工作。Work结构体主要用以携带数据，被视为挖掘一个区块时所需的数据环境。</p>
+<p>主要的数据传输发生在worker和它的Agent(们)之间：在合适的时候，worker把一个Work对象发送给每个Agent，然后任何一个Agent完成mine时，将一个经过授权确认的Block加上那个更新过的Work，组成一个Result对象发送回worker。</p>
+<p>调用方worker内部声明了一个Agent数组，但目前只有一个实现类CpuAgent的对象会被加到该数组。CpuAgent通过全局的&lt;<engine>&gt;对象，借助共识算法完成最终的区块授权。</engine></p>
+<p>另外，unconfirmedBlocks 也挺特别，它会以unconfirmedBlock的形式存储最近一些本地挖掘出的区块。在一段时间之后，根据区块的Number和Hash，再确定这些区块是否已经被收纳进主干链(canonical chain)里，以输出Log的方式来告知用户。</p>
+<p>对于一个新区块被挖掘出的过程，代码实现上基本分为两个环节：一是组装出一个新区块，这个区块的数据基本完整，包括成员Header的部分属性，以及交易列表txs，和叔区块组uncles[]，并且所有交易已经执行完毕，所有收据(Receipt)也已收集完毕，这部分主要由worker完成；二是填补该区块剩余的成员属性，比如Header.Difficulty等，并完成授权，这些工作是由Agent调用<engine>接口实现体，利用共识算法来完成的。</engine></p>
+<h2 id="新区块的组装流程"><a href="#新区块的组装流程" class="headerlink" title="新区块的组装流程"></a>新区块的组装流程</h2><p>挖掘新区块的流程入口在Miner里，具体入口在Miner结构体的创建函数(避免称之为‘构造函数’)里。</p>
+<p><img src="/2018/03/26/mine/new_miner.png" alt="img"></p>
+<h3 id="Miner的函数"><a href="#Miner的函数" class="headerlink" title="Miner的函数"></a>Miner的函数</h3><p>####New()</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">New</span><span class="params">(eth Backend, config *params.ChainConfig, mux *event.TypeMux, engine consensus.Engine)</span> *<span class="title">Miner</span></span> &#123;</div><div class="line">    miner := &amp;Miner&#123;</div><div class="line">        eth:      eth,</div><div class="line">        mux:      mux,</div><div class="line">        engine:   engine,</div><div class="line">        worker:   newWorker(config, engine, common.Address&#123;&#125;, eth, mux),</div><div class="line">        canStart: <span class="number">1</span>,</div><div class="line">    &#125;</div><div class="line">    miner.Register(NewCpuAgent(eth.BlockChain(), engine))</div><div class="line">    <span class="keyword">go</span> miner.update()</div><div class="line"></div><div class="line">    <span class="keyword">return</span> miner</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>在New()里，针对新对象miner的各个成员变量初始化完成后，会紧跟着创建worker对象，然后将Agent对象登记给worker，最后用一个单独线程去运行miner.Update()函数；</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="title">newWorker</span><span class="params">(config *params.ChainConfig, engine consensus.Engine, coinbase common.Address, eth Backend, mux *event.TypeMux)</span> *<span class="title">worker</span></span> &#123;</div><div class="line">    worker := &amp;worker&#123;</div><div class="line">        config:         config,</div><div class="line">        engine:         engine,</div><div class="line">        eth:            eth,</div><div class="line">        mux:            mux,</div><div class="line">        txCh:           <span class="built_in">make</span>(<span class="keyword">chan</span> core.TxPreEvent, txChanSize),<span class="comment">// TxPreEvent事件是TxPool发出的事件，代表一个新交易tx加入到了交易池中，这时候如果work空闲会将该笔交易收进work.txs，准备下一次打包进块。</span></div><div class="line">        chainHeadCh:    <span class="built_in">make</span>(<span class="keyword">chan</span> core.ChainHeadEvent, chainHeadChanSize),<span class="comment">// ChainHeadEvent事件，代表已经有一个块作为链头，此时work.update函数会监听到这个事件，则会继续挖新的区块。</span></div><div class="line">        chainSideCh:    <span class="built_in">make</span>(<span class="keyword">chan</span> core.ChainSideEvent, chainSideChanSize),<span class="comment">// ChainSideEvent事件，代表有一个新块作为链的旁支，会被放到possibleUncles数组中，可能称为叔块。</span></div><div class="line">        chainDb:        eth.ChainDb(),<span class="comment">// 区块链数据库</span></div><div class="line">        recv:           <span class="built_in">make</span>(<span class="keyword">chan</span> *Result, resultQueueSize),</div><div class="line">        chain:          eth.BlockChain(), <span class="comment">// 链</span></div><div class="line">        proc:           eth.BlockChain().Validator(),</div><div class="line">        possibleUncles: <span class="built_in">make</span>(<span class="keyword">map</span>[common.Hash]*types.Block),<span class="comment">// 存放可能称为下一个块的叔块数组</span></div><div class="line">        coinbase:       coinbase,</div><div class="line">        agents:         <span class="built_in">make</span>(<span class="keyword">map</span>[Agent]<span class="keyword">struct</span>&#123;&#125;),</div><div class="line">        unconfirmed:    newUnconfirmedBlocks(eth.BlockChain(), miningLogAtDepth),<span class="comment">// 返回一个数据结构，包括追踪当前未被确认的区块。</span></div><div class="line">    &#125;</div><div class="line">    <span class="comment">// 注册TxPreEvent事件到tx pool交易池</span></div><div class="line">    worker.txSub = eth.TxPool().SubscribeTxPreEvent(worker.txCh)</div><div class="line">    <span class="comment">// 注册事件到blockchain</span></div><div class="line">    worker.chainHeadSub = eth.BlockChain().SubscribeChainHeadEvent(worker.chainHeadCh)</div><div class="line">    worker.chainSideSub = eth.BlockChain().SubscribeChainSideEvent(worker.chainSideCh)</div><div class="line">    <span class="keyword">go</span> worker.update()</div><div class="line"></div><div class="line">    <span class="keyword">go</span> worker.wait()</div><div class="line">    worker.commitNewWork()</div><div class="line"></div><div class="line">    <span class="keyword">return</span> worker</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>worker的创建函数里也如法炮制，分别用单独线程去启动worker.updater()和wait()；最后worker.CommitNewWork()会开始准备一个新区块所需的基本数据，如Header，Txs, Uncles等。注意此时Agent尚未启动。</p>
+<p>####Miner.Update()</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// update方法可以保持对下载事件的监听，请了解这是一段短型的update循环。</span></div><div class="line"><span class="function"><span class="keyword">func</span> <span class="params">(self *Miner)</span> <span class="title">update</span><span class="params">()</span></span> &#123;</div><div class="line">    <span class="comment">// 注册下载开始事件，下载结束事件，下载失败事件。</span></div><div class="line">    events := self.mux.Subscribe(downloader.StartEvent&#123;&#125;, downloader.DoneEvent&#123;&#125;, downloader.FailedEvent&#123;&#125;)</div><div class="line">out:</div><div class="line">    <span class="keyword">for</span> ev := <span class="keyword">range</span> events.Chan() &#123;</div><div class="line">        <span class="keyword">switch</span> ev.Data.(<span class="keyword">type</span>) &#123;</div><div class="line">        <span class="keyword">case</span> downloader.StartEvent:</div><div class="line">            atomic.StoreInt32(&amp;self.canStart, <span class="number">0</span>)</div><div class="line">            <span class="keyword">if</span> self.Mining() &#123;</div><div class="line">                self.Stop()</div><div class="line">                atomic.StoreInt32(&amp;self.shouldStart, <span class="number">1</span>)</div><div class="line">                log.Info(<span class="string">"Mining aborted due to sync"</span>)</div><div class="line">            &#125;</div><div class="line">        <span class="keyword">case</span> downloader.DoneEvent, downloader.FailedEvent: <span class="comment">// 下载完成和失败都走相同的分支。</span></div><div class="line">            shouldStart := atomic.LoadInt32(&amp;self.shouldStart) == <span class="number">1</span></div><div class="line"></div><div class="line">            atomic.StoreInt32(&amp;self.canStart, <span class="number">1</span>)</div><div class="line">            atomic.StoreInt32(&amp;self.shouldStart, <span class="number">0</span>)</div><div class="line">            <span class="keyword">if</span> shouldStart &#123;</div><div class="line">                self.Start(self.coinbase) <span class="comment">// 执行Miner的start方法。</span></div><div class="line">            &#125;</div><div class="line">            <span class="comment">// 处理完以后要取消订阅</span></div><div class="line">            events.Unsubscribe()</div><div class="line">            <span class="comment">// 跳出循环，不再监听</span></div><div class="line">            <span class="keyword">break</span> out</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>####Miner.Start()</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="params">(self *Miner)</span> <span class="title">Start</span><span class="params">(coinbase common.Address)</span></span> &#123;</div><div class="line">	atomic.StoreInt32(&amp;self.shouldStart, <span class="number">1</span>)</div><div class="line">	self.SetEtherbase(coinbase)</div><div class="line"></div><div class="line">	<span class="keyword">if</span> atomic.LoadInt32(&amp;self.canStart) == <span class="number">0</span> &#123;</div><div class="line">		log.Info(<span class="string">"Network syncing, will start miner afterwards"</span>)</div><div class="line">		<span class="keyword">return</span></div><div class="line">	&#125;</div><div class="line">	atomic.StoreInt32(&amp;self.mining, <span class="number">1</span>)</div><div class="line"></div><div class="line">	log.Info(<span class="string">"Starting mining operation"</span>)</div><div class="line">	self.worker.start()</div><div class="line">	self.worker.commitNewWork()</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>####worker.start()</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="params">(self *worker)</span> <span class="title">start</span><span class="params">()</span></span> &#123;</div><div class="line">	self.mu.Lock()</div><div class="line">	<span class="keyword">defer</span> self.mu.Unlock()</div><div class="line"></div><div class="line">	atomic.StoreInt32(&amp;self.mining, <span class="number">1</span>)</div><div class="line"></div><div class="line">	<span class="comment">// spin up agents</span></div><div class="line">	<span class="keyword">for</span> agent := <span class="keyword">range</span> self.agents &#123;</div><div class="line">		agent.Start()</div><div class="line">	&#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>这个update()会订阅(监听)几种事件，均跟Downloader相关。当收到Downloader的StartEvent时，意味者此时本节点正在从其他节点下载新区块，这时miner会立即停止进行中的挖掘工作，并继续监听；如果收到DoneEvent或FailEvent时，意味本节点的下载任务已结束-无论下载成功或失败-此时都可以开始挖掘新区块，并且此时会退出Downloader事件的监听。</p>
+<p>从miner.Update()的逻辑可以看出，对于任何一个Ethereum网络中的节点来说，挖掘一个新区块和从其他节点下载、同步一个新区块，根本是相互冲突的。这样的规定，保证了在某个节点上，一个新区块只可能有一种来源，这可以大大降低可能出现的区块冲突，并避免全网中计算资源的浪费。</p>
+<h3 id="worker的函数"><a href="#worker的函数" class="headerlink" title="worker的函数"></a>worker的函数</h3><p>worker的属性非常多而具体了，都是挖矿具体操作相关的，其中包括链本身的属性以及区块数据结构的属性。首先来看ChainConfig：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">type</span> ChainConfig <span class="keyword">struct</span> &#123;</div><div class="line">    ChainId *big.Int <span class="string">`json:"chainId"`</span> <span class="comment">// 链id标识了当前链，主键唯一id，也用于replay protection重发保护（用来防止replay attack重发攻击：恶意重复或拖延正确数据传输的一种网络攻击手段）</span></div><div class="line"></div><div class="line">    HomesteadBlock *big.Int <span class="string">`json:"homesteadBlock,omitempty"`</span> <span class="comment">// 当前链Homestead，置为0</span></div><div class="line"></div><div class="line">    DAOForkBlock   *big.Int <span class="string">`json:"daoForkBlock,omitempty"`</span>   <span class="comment">// TheDAO硬分叉切换。</span></div><div class="line">    DAOForkSupport <span class="keyword">bool</span>     <span class="string">`json:"daoForkSupport,omitempty"`</span> <span class="comment">// 结点是否支持或者反对DAO硬分叉。</span></div><div class="line"></div><div class="line">    <span class="comment">// EIP150 implements the Gas price changes (https://github.com/ethereum/EIPs/issues/150)</span></div><div class="line">    EIP150Block *big.Int    <span class="string">`json:"eip150Block,omitempty"`</span> <span class="comment">// EIP150 HF block (nil = no fork)</span></div><div class="line">    EIP150Hash  common.Hash <span class="string">`json:"eip150Hash,omitempty"`</span>  <span class="comment">// EIP150 HF hash (needed for header only clients as only gas pricing changed)</span></div><div class="line"></div><div class="line">    EIP155Block *big.Int <span class="string">`json:"eip155Block,omitempty"`</span> <span class="comment">// EIP155 HF block，没有硬分叉置为0</span></div><div class="line">    EIP158Block *big.Int <span class="string">`json:"eip158Block,omitempty"`</span> <span class="comment">// EIP158 HF block，没有硬分叉置为0</span></div><div class="line"></div><div class="line">    ByzantiumBlock *big.Int <span class="string">`json:"byzantiumBlock,omitempty"`</span> <span class="comment">// Byzantium switch block (nil = no fork, 0 = already on byzantium)</span></div><div class="line"></div><div class="line">    <span class="comment">// Various consensus engines</span></div><div class="line">    Ethash *EthashConfig <span class="string">`json:"ethash,omitempty"`</span></div><div class="line">    Clique *CliqueConfig <span class="string">`json:"clique,omitempty"`</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>ChainConfig顾名思义就是链的配置属性。ChainConfig中包含了ChainID等属性，其中有很多都是针对以太坊历史发生的问题进行的专门配置。</p>
+<ul>
+<li>ChainId可以预防replay攻击。</li>
+<li>Homestead是以太坊发展蓝图中的一个阶段。第一阶段是以太坊区块链面世，代号为frontier，第二个阶段即为当前阶段，代号为Homestead（家园），第三阶段为Metropolis（大都会），大都会又细分为两个小阶段，第一个是Byzantium（拜占庭）硬分叉(引入新型零知识证明算法以及pos权益证明共识算法)，第二个是Constantinople（君士坦丁堡）硬分叉（以太坊正式应用pow和pos混合链，解决拜占庭引发的问题）。最后一个阶段代号Serenity（宁静），最终版本的以太坊稳定运行。</li>
+<li>2017年6月18日，以太坊上DAO（去中心自治组织）的一次大危机做出的相应调整。感兴趣的可以自行谷百。</li>
+<li>2017年10月16日，以太坊的一次Byzantium拜占庭硬分叉。</li>
+<li>EIPs(Ethereum Improvement Proposals)，是以太坊更新改善的一些方案，对应后面的数字就是以太坊github源码issue的编号。</li>
+</ul>
+<p>再来看下 Backend对象，Backend是一个自定义接口封装了所有挖矿所需方法。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">type</span> Backend <span class="keyword">interface</span> &#123;</div><div class="line">	AccountManager() *accounts.Manager</div><div class="line">	BlockChain() *core.BlockChain</div><div class="line">	TxPool() *core.TxPool</div><div class="line">	ChainDb() ethdb.Database</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>这里我们主要关注worker.updater()和wait()</p>
+<p><img src="/2018/03/26/mine/worker.png" alt="img"></p>
+<p>####worker.update()</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="params">(self *worker)</span> <span class="title">update</span><span class="params">()</span></span> &#123;</div><div class="line">	<span class="keyword">defer</span> self.txSub.Unsubscribe()</div><div class="line">	<span class="keyword">defer</span> self.chainHeadSub.Unsubscribe()</div><div class="line">	<span class="keyword">defer</span> self.chainSideSub.Unsubscribe()</div><div class="line"></div><div class="line">	<span class="keyword">for</span> &#123;</div><div class="line">		<span class="comment">// A real event arrived, process interesting content</span></div><div class="line">		<span class="keyword">select</span> &#123;</div><div class="line">		<span class="comment">// Handle ChainHeadEvent</span></div><div class="line">		<span class="keyword">case</span> &lt;-self.chainHeadCh:</div><div class="line">			self.commitNewWork()</div><div class="line"></div><div class="line">		<span class="comment">// Handle ChainSideEvent</span></div><div class="line">		<span class="keyword">case</span> ev := &lt;-self.chainSideCh:</div><div class="line">			self.uncleMu.Lock()</div><div class="line">			self.possibleUncles[ev.Block.Hash()] = ev.Block</div><div class="line">			self.uncleMu.Unlock()</div><div class="line"></div><div class="line">		<span class="comment">// Handle TxPreEvent</span></div><div class="line">		<span class="keyword">case</span> ev := &lt;-self.txCh:</div><div class="line">			<span class="comment">// Apply transaction to the pending state if we're not mining</span></div><div class="line">			<span class="keyword">if</span> atomic.LoadInt32(&amp;self.mining) == <span class="number">0</span> &#123;</div><div class="line">				self.currentMu.Lock()</div><div class="line">				acc, _ := types.Sender(self.current.signer, ev.Tx)</div><div class="line">				txs := <span class="keyword">map</span>[common.Address]types.Transactions&#123;acc: &#123;ev.Tx&#125;&#125;</div><div class="line">				txset := types.NewTransactionsByPriceAndNonce(self.current.signer, txs)</div><div class="line"></div><div class="line">				self.current.commitTransactions(self.mux, txset, self.chain, self.coinbase)</div><div class="line">				self.updateSnapshot()</div><div class="line">				self.currentMu.Unlock()</div><div class="line">			&#125; <span class="keyword">else</span> &#123;</div><div class="line">				<span class="comment">// If we're mining, but nothing is being processed, wake on new transactions</span></div><div class="line">				<span class="keyword">if</span> self.config.Clique != <span class="literal">nil</span> &amp;&amp; self.config.Clique.Period == <span class="number">0</span> &#123;</div><div class="line">					self.commitNewWork()</div><div class="line">				&#125;</div><div class="line">			&#125;</div><div class="line"></div><div class="line">		<span class="comment">// System stopped</span></div><div class="line">		<span class="keyword">case</span> &lt;-self.txSub.Err():</div><div class="line">			<span class="keyword">return</span></div><div class="line">		<span class="keyword">case</span> &lt;-self.chainHeadSub.Err():</div><div class="line">			<span class="keyword">return</span></div><div class="line">		<span class="keyword">case</span> &lt;-self.chainSideSub.Err():</div><div class="line">			<span class="keyword">return</span></div><div class="line">		&#125;</div><div class="line">	&#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>worker.update()分别监听ChainHeadEvent，ChainSideEvent，TxPreEvent几个事件，每个事件会触发worker不同的反应。ChainHeadEvent是指区块链中已经加入了一个新的区块作为整个链的链头，这时worker的回应是立即开始准备挖掘下一个新区块(也是够忙的)；ChainSideEvent指区块链中加入了一个新区块作为当前链头的旁支，worker会把这个区块收纳进possibleUncles[]数组，作为下一个挖掘新区块可能的Uncle之一；TxPreEvent是TxPool对象发出的，指的是一个新的交易tx被加入了TxPool，这时如果worker没有处于挖掘中，那么就去执行这个tx，并把它收纳进Work.txs数组，为下次挖掘新区块备用。</p>
+<p>需要稍稍注意的是，ChainHeadEvent 并不一定是外部源发出。由于 worker 对象有个成员变量chain(eth.BlockChain)，所以当worker自己完成挖掘一个新区块，并把它写入数据库，加进区块链里成为新的链头时，worker自己也可以调用chain发出一个ChainHeadEvent，从而被worker.update()函数监听到，进入下一次区块挖掘。</p>
+<p>####worker.wait()</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="params">(self *worker)</span> <span class="title">wait</span><span class="params">()</span></span> &#123;</div><div class="line">    <span class="keyword">for</span> &#123;</div><div class="line">        mustCommitNewWork := <span class="literal">true</span></div><div class="line">        <span class="keyword">for</span> result := <span class="keyword">range</span> self.recv &#123;</div><div class="line">            atomic.AddInt32(&amp;self.atWork, <span class="number">-1</span>)</div><div class="line"></div><div class="line">            <span class="keyword">if</span> result == <span class="literal">nil</span> &#123;</div><div class="line">                <span class="keyword">continue</span></div><div class="line">            &#125;</div><div class="line">            block := result.Block</div><div class="line">            work := result.Work</div><div class="line"></div><div class="line">            <span class="comment">// Update the block hash in all logs since it is now available and not when the receipt/log of individual transactions were created.</span></div><div class="line">            <span class="keyword">for</span> _, r := <span class="keyword">range</span> work.receipts &#123;</div><div class="line">                <span class="keyword">for</span> _, l := <span class="keyword">range</span> r.Logs &#123;</div><div class="line">                    l.BlockHash = block.Hash()</div><div class="line">                &#125;</div><div class="line">            &#125;</div><div class="line">            <span class="keyword">for</span> _, log := <span class="keyword">range</span> work.state.Logs() &#123;</div><div class="line">                log.BlockHash = block.Hash()</div><div class="line">            &#125;</div><div class="line">            stat, err := self.chain.WriteBlockAndState(block, work.receipts, work.state)</div><div class="line">            <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</div><div class="line">                log.Error(<span class="string">"Failed writing block to chain"</span>, <span class="string">"err"</span>, err)</div><div class="line">                <span class="keyword">continue</span></div><div class="line">            &#125;</div><div class="line">            <span class="comment">// 检查是否是标准块，写入交易数据。</span></div><div class="line">            <span class="keyword">if</span> stat == core.CanonStatTy &#123;</div><div class="line">                <span class="comment">// 受ChainHeadEvent事件的影响。</span></div><div class="line">                mustCommitNewWork = <span class="literal">false</span></div><div class="line">            &#125;</div><div class="line">            <span class="comment">// 广播一个块声明插入链事件NewMinedBlockEvent</span></div><div class="line">            self.mux.Post(core.NewMinedBlockEvent&#123;Block: block&#125;)</div><div class="line">            <span class="keyword">var</span> (</div><div class="line">                events []<span class="keyword">interface</span>&#123;&#125;</div><div class="line">                logs   = work.state.Logs()</div><div class="line">            )</div><div class="line">            events = <span class="built_in">append</span>(events, core.ChainEvent&#123;Block: block, Hash: block.Hash(), Logs: logs&#125;)</div><div class="line">            <span class="keyword">if</span> stat == core.CanonStatTy &#123;</div><div class="line">                events = <span class="built_in">append</span>(events, core.ChainHeadEvent&#123;Block: block&#125;)</div><div class="line">            &#125;</div><div class="line">            self.chain.PostChainEvents(events, logs)</div><div class="line"></div><div class="line">            <span class="comment">// 将处理中的数据插入到区块中，等待确认</span></div><div class="line">            self.unconfirmed.Insert(block.NumberU64(), block.Hash())</div><div class="line"></div><div class="line">            <span class="keyword">if</span> mustCommitNewWork &#123;</div><div class="line">                self.commitNewWork() <span class="comment">// 多次见到，顾名思义，就是提交新的work</span></div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>worker.wait()会在一个channel处一直等待Agent完成挖掘发送回来的新Block和Work对象。这个Block会被写入数据库，加入本地的区块链试图成为最新的链头。注意，此时区块中的所有交易，假设都已经被执行过了，所以这里的操作，不会再去执行这些交易对象。</p>
+<p>当这一切都完成，worker就会发送一条事件(NewMinedBlockEvent{})，等于通告天下：我挖出了一个新区块！这样监听到该事件的其他节点，就会根据自身的状况，来决定是否接受这个新区块成为全网中公认的区块链新的链头。至于这个公认过程如何实现，就属于共识算法的范畴了。</p>
+<p>####worker.commitNewWork()</p>
+<p>commitNewWork方法源码比较长，这里就不粘贴出来了，这个方法主要的工作是为新块准备基本数据，包括header，txs，uncles等。commitNewWork()会在worker内部多处被调用，注意它每次都是被直接调用，并没有以goroutine的方式启动。commitNewWork()内部使用sync.Mutex对全部操作做了隔离。这个函数的基本逻辑如下：</p>
+<ol>
+<li>准备新区块的时间属性Header.Time，一般均等于系统当前时间，不过要确保父区块的时间(parentBlock.Time())要早于新区块的时间，父区块当然来自当前区块链的链头了。</li>
+<li>创建新区块的Header对象，其各属性中：Num可确定(父区块Num +1)；Time可确定；ParentHash可确定;其余诸如Difficulty，GasLimit等，均留待之后共识算法中确定。</li>
+<li>调用Engine.Prepare()函数，完成Header对象的准备。</li>
+<li>根据新区块的位置(Number)，查看它是否处于DAO硬分叉的影响范围内，如果是，则赋值予header.Extra。</li>
+<li>根据已有的Header对象，创建一个新的Work对象，并用其更新worker.current成员变量。</li>
+<li>如果配置信息中支持硬分叉，在Work对象的StateDB里应用硬分叉。</li>
+<li>准备新区块的交易列表，来源是TxPool中那些最近加入的tx，并执行这些交易。</li>
+<li>准备新区块的叔区块uncles[]，来源是worker.possibleUncles[]，而possibleUncles[]中的每个区块都从事件ChainSideEvent中搜集得到。注意叔区块最多有两个。</li>
+<li>调用Engine.Finalize()函数，对新区块“定型”，填充上Header.Root, TxHash, ReceiptHash, UncleHash等几个属性。</li>
+<li>如果上一个区块(即旧的链头区块)处于unconfirmedBlocks中，意味着它也是由本节点挖掘出来的，尝试去验证它已经被吸纳进主干链中。</li>
+<li>把创建的Work对象，通过channel发送给每一个登记过的Agent，进行后续的挖掘。</li>
+</ol>
+<p>以上步骤中，4和6都是仅仅在该区块配置中支持DAO硬分叉，并且该区块的位置正好处于DAO硬分叉影响范围内时才会发生；其他步骤是普遍性的。commitNewWork()完成了待挖掘区块的组装，block.Header创建完毕，交易数组txs，叔区块Uncles[]都已取得，并且由于所有交易被执行完毕，相应的Receipt[]也已获得。万事俱备，可以交给Agent进行‘挖掘’了。</p>
+<h3 id="CpuAgent的函数"><a href="#CpuAgent的函数" class="headerlink" title="CpuAgent的函数"></a>CpuAgent的函数</h3><p>CpuAgent中与mine相关的函数，主要是update()和mine():</p>
+<p><img src="/2018/03/26/mine/./images/cpuagent.png" alt="img"></p>
+<p>####CpuAgent.update()</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="params">(self *CpuAgent)</span> <span class="title">update</span><span class="params">()</span></span> &#123;</div><div class="line">out:</div><div class="line">    <span class="keyword">for</span> &#123;</div><div class="line">        <span class="keyword">select</span> &#123;</div><div class="line">        <span class="keyword">case</span> work := &lt;-self.workCh:</div><div class="line">            self.mu.Lock()</div><div class="line">            <span class="keyword">if</span> self.quitCurrentOp != <span class="literal">nil</span> &#123;</div><div class="line">                <span class="built_in">close</span>(self.quitCurrentOp)</div><div class="line">            &#125;</div><div class="line">            self.quitCurrentOp = <span class="built_in">make</span>(<span class="keyword">chan</span> <span class="keyword">struct</span>&#123;&#125;)</div><div class="line">            <span class="keyword">go</span> self.mine(work, self.quitCurrentOp)</div><div class="line">            self.mu.Unlock()</div><div class="line">        <span class="keyword">case</span> &lt;-self.stop:</div><div class="line">            self.mu.Lock()</div><div class="line">            <span class="keyword">if</span> self.quitCurrentOp != <span class="literal">nil</span> &#123;</div><div class="line">                <span class="built_in">close</span>(self.quitCurrentOp)</div><div class="line">                self.quitCurrentOp = <span class="literal">nil</span></div><div class="line">            &#125;</div><div class="line">            self.mu.Unlock()</div><div class="line">            <span class="keyword">break</span> out</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>CpuAgent.update()就是worker.commitNewWork()结束后发出Work对象的会一直监听相关channel，如果收到Work对象(显然由worker.commitNewWork()结束后发出)，就启动mine()函数；如果收到停止(mine)的消息，就退出一切相关操作。</p>
+<p>####CpuAgent.mine()</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">func</span> <span class="params">(self *CpuAgent)</span> <span class="title">mine</span><span class="params">(work *Work, stop &lt;-<span class="keyword">chan</span> <span class="keyword">struct</span>&#123;&#125;)</span></span> &#123;</div><div class="line">    <span class="keyword">if</span> result, err := self.engine.Seal(self.chain, work.Block, stop); result != <span class="literal">nil</span> &#123;</div><div class="line">        log.Info(<span class="string">"Successfully sealed new block"</span>, <span class="string">"number"</span>, result.Number(), <span class="string">"hash"</span>, result.Hash())</div><div class="line">        self.returnCh &lt;- &amp;Result&#123;work, result&#125;</div><div class="line">    &#125; <span class="keyword">else</span> &#123;</div><div class="line">        <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</div><div class="line">            log.Warn(<span class="string">"Block sealing failed"</span>, <span class="string">"err"</span>, err)</div><div class="line">        &#125;</div><div class="line">        self.returnCh &lt;- <span class="literal">nil</span></div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>CpuAgent.mine()会直接调用Engine.Seal()函数，利用Engine实现体的共识算法对传入的Block进行最终的授权，如果成功，就将Block同Work一起通过channel发还给worker，那边worker.wait()会接收并处理。</p>
+<p>显然，这两个函数都没做什么实质性工作，它们只是负责调用<engine>接口实现体，待授权完成后将区块数据发送回worker。挖掘出一个区块的真正奥妙全在Engine实现体所代表的共识算法里。</engine></p>
+<p><img src="/2018/03/26/mine/mine_block.png" alt="img"></p>
+
+      
+    </div>
+    
+    <footer>
+        <div class="alignright">
+          
+          <a href='javascript:void(0)' class="share-link bdsharebuttonbox" data-cmd="more">分享</a>
+        </div>
+        
+        
+        <!-- partial('post/share') -->
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="搜索">
+    <input type="hidden" name="q" value="site:yangchenglong11.github.io">
+  </form>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">分类</h3>
+  <ul class="entry">
+  
+    <li><a href="/categories/BlockChain/">BlockChain</a><small>5</small></li>
+  
+    <li><a href="/categories/Docker/">Docker</a><small>1</small></li>
+  
+    <li><a href="/categories/Golang/">Golang</a><small>15</small></li>
+  
+    <li><a href="/categories/Linux/">Linux</a><small>5</small></li>
+  
+    <li><a href="/categories/MongoDB/">MongoDB</a><small>4</small></li>
+  
+    <li><a href="/categories/Network/">Network</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">最新文章</h3>
+  <ul class="entry">
+    
+      <li>
+        <a href="/2018/03/26/mine/">mine</a>
+      </li>
+    
+      <li>
+        <a href="/2018/03/18/the-store-of-block/">区块存储</a>
+      </li>
+    
+      <li>
+        <a href="/2018/03/16/merkle-patricia-tree/">Merkle Patricia Tree (梅克尔帕特里夏树) 详解</a>
+      </li>
+    
+      <li>
+        <a href="/2018/03/13/the-basic-of-ethereum/">初识以太坊</a>
+      </li>
+    
+      <li>
+        <a href="/2018/03/11/transaction-and-scripts-of-bitcoin/">比特币分析之交易、脚本</a>
+      </li>
+    
+  </ul>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">标签</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/BlockChain/">BlockChain</a><small>5</small></li>
+  
+    <li><a href="/tags/Docker/">Docker</a><small>1</small></li>
+  
+    <li><a href="/tags/Golang/">Golang</a><small>16</small></li>
+  
+    <li><a href="/tags/Linux/">Linux</a><small>5</small></li>
+  
+    <li><a href="/tags/MongoDB/">MongoDB</a><small>4</small></li>
+  
+    <li><a href="/tags/Network/">Network</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tagcloud">
+  <h3 class="title">标签云</h3>
+  <div class="entry">
+    <a href="/tags/BlockChain/" style="font-size: 16.67px;">BlockChain</a> <a href="/tags/Docker/" style="font-size: 10px;">Docker</a> <a href="/tags/Golang/" style="font-size: 20px;">Golang</a> <a href="/tags/Linux/" style="font-size: 16.67px;">Linux</a> <a href="/tags/MongoDB/" style="font-size: 13.33px;">MongoDB</a> <a href="/tags/Network/" style="font-size: 10px;">Network</a>
+  </div>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  <p>
+  
+  &copy; 2018 Yang Chenglong
+  
+  All rights reserved.</p>
+  <p>Powered by <a href="http://hexo.io/" target="_blank">Hexo</a></p>
+</div>
+<div class="clearfix"></div>
+
+<script>window._bd_share_config={"common":{"bdSnsKey":{},"bdText":"","bdMini":"1","bdMiniList":false,"bdPic":"","bdStyle":"2","bdSize":"16"},"share":{}};with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='http://bdimg.share.baidu.com/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];</script></footer>
+  <script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+
+<div id='bg'></div>
+  
+    <script type="text/javascript" src="/live2d/script.js"></script>
+    <canvas id="live2dcanvas" width="300" height="400" class="live2d"></canvas>
+    <style>
+      #live2dcanvas {
+        position: fixed;
+        right: 0px;
+        z-index: 999;
+        pointer-events: none;
+        bottom: -50px;
+      }
+    </style>
+    <script>loadlive2d("live2dcanvas" ,"/live2d/assets/tororo/tororo.model.json",0.5)</script>
+  
+</body>
+</html>
